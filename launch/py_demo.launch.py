@@ -11,7 +11,7 @@ def generate_launch_description():
         demo,
         robot_name,
         Node(
-            package='ros2_examples',
+            package='combined_approach',
             namespace=LaunchConfiguration('robot_name'),
             executable=LaunchConfiguration('demo'),
             name=LaunchConfiguration('demo'),

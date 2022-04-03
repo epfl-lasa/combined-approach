@@ -28,6 +28,17 @@ Build the docker
 ./build-server.sh
 ```
 
+Run docker with temporary-python container:
+``` bash
+aica-docker interactive control-libraries-ros-demos:galactic-devel -u ros2 -v ${PWD}/python:/home/ros2/ros2_ws/src/combined_approach/python --net host --no-hostname --ros-domain-id 0
+```
+[WARNING] Make sure that this is run in the base-folder.
+
+Run demo script:
+``` bash
+ros2 launch combined_approach demo.launch.py demo:=cartesian_twist_control
+```
+
 Run file
 ``` bash
 aica-docker interactive control-libraries-ros-demos:galactic-devel -u ros2 --net bridge
