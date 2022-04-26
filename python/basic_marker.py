@@ -1,4 +1,8 @@
+#!/usr/bin/python3
+#!python
 import rclpy
+import math
+
 from rclpy.node import Node
 
 from visualization_msgs.msg import Marker
@@ -13,19 +17,26 @@ class MarkerPublisher(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
 
-        self.init_marker(index=0,x_val=0.0,y_val=0.0,z_val=0.0,segment="0")
+        self.init_marker(index=0,x_val=0.0,y_val=0.0,z_val=0.0)
         
 
     def timer_callback(self):
         
         print('publishing marker')
+        
+        # if self.i == max_val:
+            # self.i=0
+        sinus_value = (math.sin(self.i/10)+1 +0.14)/2
+        print(sinus_value)
+        self.marker_object.pose.position.z = sinus_value
         self.objectlisher.publish(self.marker_object)
+        self.i+=1
         
       
 
-    def init_marker(self, index=0, x_val=0.0,y_val=0.0,z_val=0.0,segment="0"):
+    def init_marker(self, index=0, x_val=0.0,y_val=0.0,z_val=0.0):
         self.marker_object = Marker()
-        self.marker_object.header.frame_id = "/_frankalink"+segment
+        self.marker_object.header.frame_id = "world"
         
         # self.marker_object.header.stamp    = rospy.get_rostime()
         # self.marker_object.header.stamp    = MarkerPublisher.get_clock().now()
@@ -35,8 +46,8 @@ class MarkerPublisher(Node):
         self.marker_object.type = Marker.SPHERE
         self.marker_object.action = Marker.ADD
       
-        self.marker_object.pose.position.x = 0.0;
-        self.marker_object.pose.position.y = 0.0;
+        self.marker_object.pose.position.x = 0.3;
+        self.marker_object.pose.position.y = 0.3;
         self.marker_object.pose.position.z = 0.0;
 
       
@@ -69,5 +80,4 @@ def main(args=None):
     rclpy.shutdown()
 
 if __name__ == '__main__':
-	main()
-
+    main()

@@ -8,7 +8,7 @@ RUN mkdir -p ${HOME}/lib
 WORKDIR ${HOME}/lib
 
 # Dynamic Obstacle Avoidance Library
-RUN echo 31
+RUN echo 32
 RUN git clone -b main --single-branch https://github.com/epfl-lasa/dynamic_obstacle_avoidance
 RUN  python3.8 -m pip install -r dynamic_obstacle_avoidance/requirements.txt
 RUN cd dynamic_obstacle_avoidance && sudo python3.8 -m pip install --editable .
