@@ -2,11 +2,21 @@
 #!python
 
 import rclpy
+
 from rclpy.node import Node
+from rclpy.duration import Duration
 
 from visualization_msgs.msg import Marker , MarkerArray
 from geometry_msgs.msg import Point
 from std_msgs.msg import String
+
+import tf2_ros
+from tf2_ros import TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+
+from geometry_msgs.msg import TransformStamped
+from tf2_ros import TransformBroadcaster
 
 
 
@@ -25,11 +35,28 @@ class RigidLink:
 
 class FrankaRobotPublisher (Node):
     def __init__(self):
+
         super().__init__('franka_markers')
 
-        timer_period = 0.1 # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+         # Declare and acquire `target_frame` parameter
+        self.declare_parameter('world', '_frankalink8')
 
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.initialize_control_point()
+
+        self.subscription = self.create_subscription(
+            String,
+            'topic',
+            self.listener_callback,
+            10)
+        self.subscription  # prevent unused variable warning
+
+        self.timer = self.create_timer(1.0, self.timer_callback)
+
+
+
+    def initialize_control_point(self): 
         self.link_dict = {}
         self.control_publisher=self.create_publisher(MarkerArray,'/control_points',5)
         self.control_point_array = MarkerArray()
@@ -37,7 +64,7 @@ class FrankaRobotPublisher (Node):
         # self.control_publishers = []
         # self.marker_object_list = []
 
-
+        self.br = TransformBroadcaster(self)
 
         self.frame_id_base = "_frankalink"
 
@@ -123,7 +150,35 @@ class FrankaRobotPublisher (Node):
         self.add_link (
             frame_id = self.frame_id_base + str(link_8.link_id),
             link = link_8
-            )    
+            )
+
+    
+    def get_transformation(self,from_frame_rel,to_frame_rel):
+        try:
+            now = rclpy.time.Time()
+            trans = self.tf_buffer.lookup_transform(
+                to_frame_rel,
+                from_frame_rel,
+                now)
+            print(trans)
+            print("yay")
+        except TransformException as ex:
+            self.get_logger().info(
+                f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
+            return
+
+    def listener_callback(self,msg):
+        self.get_logger().info('I heard: "%s"' % msg.data)
+
+
+    def get_end_effector_position(self):
+        self.get_transformation("world","_frankalink8")
+
+
+        # trafo = self.get_transformation("world","_Julien")
+        # breakpoint()
+
+
     
     def add_link(self,frame_id, link : RigidLink ):
         
@@ -168,8 +223,9 @@ class FrankaRobotPublisher (Node):
 
     
     def timer_callback(self):
-        print('control points publisher')
+        print('1. CONTROL POINTS')
         self.control_publisher.publish(self.control_point_array)
+        self.get_end_effector_position()
             
 
     

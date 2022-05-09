@@ -24,6 +24,8 @@ from dynamic_obstacle_avoidance.visualization import plot_obstacles
 from vartools.dynamical_systems import LinearSystem
 from vartools.animator import Animator
 
+from test import myClass
+from obstacles_environment import ObstaclePublisher
 
 class DynamicalSystemAnimation(Animator):
     dim = 2
@@ -32,12 +34,14 @@ class DynamicalSystemAnimation(Animator):
         self,
         initial_dynamics,
         obstacle_environment,
-        start_position=np.array([0, 0]),
+        start_position=np.array([0, 0, 0]),
         x_lim=[-1.5, 2],
         y_lim=[-0.5, 2.5],
+        z_lim=[0.0 , 4.0 ]
     ):
         self.x_lim = x_lim
         self.y_lim = y_lim
+        self.z_lim = z_lim
 
         self.obstacle_environment = obstacle_environment
         self.initial_dynamics = initial_dynamics
@@ -107,7 +111,7 @@ def simple_point_robot():
             axes_length=[0.6, 1.3],
             center_position=np.array([-0.2, 2.4]),
             margin_absolut=0,
-            # orientation=-30 * pi / 180, 
+            orientation=-30 * pi / 180,
             tail_effect=False,
             repulsion_coeff=1.4,
         )
@@ -186,9 +190,24 @@ def run_stationary_point_avoiding_dynamic_robot():
     my_animation.run(save_animation=False)
 
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
+
 if (__name__) == "__main__":
     plt.close("all")
     plt.ion()
 
     # simple_point_robot()
-    run_stationary_point_avoiding_dynamic_robot()
+    # run_stationary_point_avoiding_dynamic_robot()
+
+
+    newClass = myClass(5)
+    val = newClass.getVal()
+    print(val)
+
+    obstaclePublisher = ObstaclePublisher()
+
+    postionss = ObstaclePublisher.getVal
+
+
+    
+

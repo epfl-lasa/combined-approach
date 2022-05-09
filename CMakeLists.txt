@@ -41,26 +41,6 @@ include_directories(
     /opt/openrobots/include
 )
 
-set(DEMOS_SCRIPTS
-    cartesian_twist_control
-    joint_space_position_control
-    joint_space_velocity_control
-)
-
-foreach(SCRIPT ${DEMOS_SCRIPTS})
-    ament_auto_add_executable(${SCRIPT} scripts/${SCRIPT}.cpp src/RobotInterfaceNode.cpp)
-    target_link_libraries(${SCRIPT}
-        ${PINOCCHIO_LIBRARIES}
-        OsqpEigen::OsqpEigen
-        osqp::osqp
-        state_representation
-        dynamical_systems
-        robot_model
-        controllers
-    )
-    target_compile_definitions(${SCRIPT} PRIVATE SCRIPT_FIXTURES="${FIXTURE_INSTALL_PATH}")
-endforeach()
-
 # Install Python modules
 ament_python_install_package(${PROJECT_NAME} SCRIPTS_DESTINATION lib/${PROJECT_NAME})
 

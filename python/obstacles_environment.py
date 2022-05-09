@@ -25,9 +25,9 @@ class Obstacles:
         
 
 
-class FrankaRobotPublisher (Node):
+class ObstaclePublisher (Node):
     def __init__(self):
-        super().__init__('franka_markers')
+        super().__init__('obstacle_node')
 
         timer_period = 0.1 # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -44,7 +44,6 @@ class FrankaRobotPublisher (Node):
         spheres = Obstacles([
             Obstacle([0.0 ,0.5, 0.0], 0.3),
             Obstacle([0.3 ,-0.5, 0.0], 0.3)
-            # Obstacle([0.0 ,-0.075, 0.01], 0.18)
             ],
             obstacle_type=Marker.SPHERE)
         self.add_obstacle (
@@ -108,7 +107,7 @@ class FrankaRobotPublisher (Node):
 
     
     def timer_callback(self):
-        print('obtacles  publisher')
+        print('2. OBSTACLES ')
         sinus_value = math.sin(self.i/10)/2
         for ii, obs in enumerate(self.obstacles_array.markers):
 
@@ -131,7 +130,7 @@ class FrankaRobotPublisher (Node):
     
 def main(args=None):
     rclpy.init(args=args)
-    marker_basic = FrankaRobotPublisher()
+    marker_basic = ObstaclePublisher()
     rclpy.spin(marker_basic)
 
     minimal_publisher.destroy_node()
