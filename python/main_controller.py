@@ -30,11 +30,6 @@ class MainController(Node):
     def __init__ (self):
         self.franka = FrankaRobotPublisher()
         self.obstacles_publisher = ObstaclePublisher()
-
-        # should take the position of the robot and that of the obstacles
-        # self.obstacle_avoidance = AvoidancePublisher(franka, obstacles_publisher)\
-        # self.obstacle_avoidance = AvoidancePublisher(self.franka, self.obstacles_publisher)
-        # self.my_listeners = FrameListener()
         self.obstacle_avoidance = AvoidancePublisher(self.franka, self.obstacles_publisher)
 
         super().__init__('main_controller')
@@ -44,16 +39,9 @@ class MainController(Node):
 
     def timer_callback(self):
         rclpy.spin_once(self.franka)
-        print("line 47")
         rclpy.spin_once(self.obstacles_publisher)
         rclpy.spin_once(self.obstacle_avoidance)
-        # # print("done it all")
-        # self.franka.timer_callback()
-        # self.obstacles_publisher.timer_callback() 
-        # self.obstacle_avoidance.timer_callback()
         
-
-
         
 def main():
     rclpy.init()

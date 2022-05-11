@@ -22,8 +22,11 @@ class AvoidancePublisher (Node):
     
     def timer_callback(self):
         print('3. AVOIDANCE')
-        self.franka.get_end_effector_position()
-        # self.franka.get_transformation("world","_frankalink8")
+        ee_pos = self.franka.get_end_effector_position()
+        
+
+        print(ee_pos)
+
     
             
 

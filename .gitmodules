@@ -1,0 +1,6 @@
+[submodule "python/dynamic_obstacle_avoidance"]
+	path = python/dynamic_obstacle_avoidance
+	url = https://github.com/epfl-lasa/dynamic_obstacle_avoidance.git
+[submodule "python/various_tools"]
+	path = python/various_tools
+	url = https://github.com/hubernikus/various_tools.git

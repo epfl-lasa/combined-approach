@@ -139,6 +139,7 @@ def simple_point_robot():
             tail_effect=False,
             repulsion_coeff=1.4,
             ))
+    obstacle_environment.
 
     obstacle_environment.append(
     Cuboid(axes_length=[0.5, 0.5],
@@ -149,6 +150,8 @@ def simple_point_robot():
            tail_effect=False,
            repulsion_coeff=1.4,
            ))
+
+    
 
 
 def run_stationary_point_avoiding_dynamic_robot():

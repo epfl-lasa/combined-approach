@@ -52,7 +52,8 @@ class FrankaRobotPublisher (Node):
             10)
         self.subscription  # prevent unused variable warning
 
-        self.timer = self.create_timer(1.0, self.timer_callback)
+        timer_period = 0.1 # seconds
+        self.timer = self.create_timer(timer_period, self.timer_callback)
 
 
 
@@ -155,29 +156,35 @@ class FrankaRobotPublisher (Node):
     
     def get_transformation(self,from_frame_rel,to_frame_rel):
         try:
-            now = rclpy.time.Time()
+            # now = rclpy.time.Time()
+            now = self.get_clock().now().to_msg()
             trans = self.tf_buffer.lookup_transform(
                 to_frame_rel,
                 from_frame_rel,
                 now)
-            print(trans)
-            print("yay")
+            print(now)
+            breakpoint()
+            return trans
         except TransformException as ex:
             self.get_logger().info(
                 f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
-            return
+            return None
 
     def listener_callback(self,msg):
         self.get_logger().info('I heard: "%s"' % msg.data)
 
 
     def get_end_effector_position(self):
-        self.get_transformation("world","_frankalink8")
+        ee_trans = self.get_transformation("_frankalink8","world")
+        
+        if ee_trans is None:
+            return None
 
+        ee_pos = [ee_trans.transform.translation.x ,
+                  ee_trans.transform.translation.y, 
+                  ee_trans.transform.translation.z]
 
-        # trafo = self.get_transformation("world","_Julien")
-        # breakpoint()
-
+        return ee_pos
 
     
     def add_link(self,frame_id, link : RigidLink ):
@@ -188,9 +195,6 @@ class FrankaRobotPublisher (Node):
         for ii, cp in enumerate(link.control_point_list):
             self.marker_object = Marker()
             self.marker_object.header.frame_id = frame_id
-            
-            # self.marker_object.header.stamp    = rospy.get_rostime()
-            # self.marker_object.header.stamp    = MarkerPublisher.get_clock().now()
 
             self.marker_object.ns = "frank_emika"
             
