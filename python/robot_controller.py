@@ -2,21 +2,18 @@
 #!python
 
 import rclpy
-
 from rclpy.node import Node
 from rclpy.duration import Duration
 
-from visualization_msgs.msg import Marker, MarkerArray
-from geometry_msgs.msg import Point
-from std_msgs.msg import String
-
 import tf2_ros
-from tf2_ros import TransformException
+from tf2_ros import TransformBroadcaster, TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
-from geometry_msgs.msg import TransformStamped
-from tf2_ros import TransformBroadcaster
+from geometry_msgs.msg import Point, TransformStamped
+from sensor_msgs.msg import JointState
+from std_msgs.msg import String
+from visualization_msgs.msg import Marker, MarkerArray
 
 
 class ControlPoint:
@@ -44,7 +41,7 @@ class FrankaRobotPublisher(Node):
         self.initialize_control_point()
 
         self.subscription = self.create_subscription(
-            String, "topic", self.listener_callback, 10
+            JointState, "franka/joint_states", self.callback_jointstate, 3
         )
         self.subscription  # prevent unused variable warning
 
@@ -126,36 +123,6 @@ class FrankaRobotPublisher(Node):
         link_8 = RigidLink([ControlPoint([0.0, 0.0, 0.0], 0.1)], link_id=8)
         self.add_link(frame_id=self.frame_id_base + str(link_8.link_id), link=link_8)
 
-    def get_transformation(self, from_frame_rel, to_frame_rel):
-        try:
-            # now = rclpy.time.Time()
-            now = self.get_clock().now().to_msg()
-            trans = self.tf_buffer.lookup_transform(to_frame_rel, from_frame_rel, now)
-            print(now)
-            breakpoint()
-            return trans
-        except TransformException as ex:
-            self.get_logger().info(
-                f"Could not transform {to_frame_rel} to {from_frame_rel}: {ex}"
-            )
-            return None
-
-    def listener_callback(self, msg):
-        self.get_logger().info('I heard: "%s"' % msg.data)
-
-    def get_end_effector_position(self):
-        ee_trans = self.get_transformation("_frankalink8", "world")
-
-        if ee_trans is None:
-            return None
-
-        ee_pos = [
-            ee_trans.transform.translation.x,
-            ee_trans.transform.translation.y,
-            ee_trans.transform.translation.z,
-        ]
-
-        return ee_pos
 
     def add_link(self, frame_id, link: RigidLink):
 
@@ -194,10 +161,61 @@ class FrankaRobotPublisher(Node):
 
             self.control_point_array.markers.append(self.marker_object)
 
+    def get_transformation(self, from_frame_rel, to_frame_rel):
+        try:
+            now = rclpy.time.Time()
+            # now = self.get_clock().now().to_msg()
+            
+            dur = Duration()
+            dur.sec = 1
+            dur.nsec = 0
+            
+            trans = self.tf_buffer.lookup_transform(
+                to_frame_rel, from_frame_rel, now, dur
+            )
+            # print(now)
+            # print(trans.header.frame_id)
+            # breakpoint()
+            return trans
+        
+        except TransformException as ex:
+            self.get_logger().info(
+                f"Could not transform {to_frame_rel} to {from_frame_rel}: {ex}"
+            )
+            return None
+                
+    def get_end_effector_position(self):
+        # ee_trans = self.get_transformation("_frankalink8", "world")
+        ee_trans = self.get_transformation("_frankalink8", "_frankalink0")
+        
+        if ee_trans is None:
+            return None
+
+        ee_pos = [
+            ee_trans.transform.translation.x,
+            ee_trans.transform.translation.y,
+            ee_trans.transform.translation.z,
+        ]
+
+        print('ee pos', ee_pos)
+
+        return ee_pos
+
+
+    def callback_jointstate(self, msg):
+        self.msg_jointstate = msg
+        
+        # print('header', msg.header.stamp)
+        # print(self.get_clock().now().to_msg())
+        
+        # self.joint_positions = msg.position
+        # self.joint_velocity = msg.velocity
+        # self.joint_effort = msg.effort
+        
     def timer_callback(self):
         print("1. CONTROL POINTS")
         self.control_publisher.publish(self.control_point_array)
-        self.get_end_effector_position()
+        # self.get_end_effector_position()
 
 
 def main(args=None):
@@ -211,3 +229,4 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
+ 

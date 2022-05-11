@@ -2,10 +2,10 @@
 #!python
 import rclpy
 from rclpy.node import Node
-
+from rclpy.duration import Duration
 
 # import state_representation as sr
-import std_msgs.msg
+
 
 # from dynamical_systems import create_cartesian_ds, DYNAMICAL_SYSTEM
 # from combined_approach.robot_interface_node import RobotInterfaceNode
@@ -14,10 +14,13 @@ import std_msgs.msg
 # mabye make into a libary instead of a local import
 # install script
 
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+from tf2_ros import TransformBroadcaster, TransformException
+
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point
 from std_msgs.msg import String
-
 
 from robot_controller import FrankaRobotPublisher
 from obstacles_environment import ObstaclePublisher
@@ -27,21 +30,27 @@ from test import FrameListener
 
 class MainController(Node):
     def __init__(self):
+        super().__init__("main_controller")
+
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
         self.franka = FrankaRobotPublisher()
         self.obstacles_publisher = ObstaclePublisher()
         self.obstacle_avoidance = AvoidancePublisher(
             self.franka, self.obstacles_publisher
         )
 
-        super().__init__("main_controller")
-
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
-
+        
+    
     def timer_callback(self):
         rclpy.spin_once(self.franka)
         rclpy.spin_once(self.obstacles_publisher)
         rclpy.spin_once(self.obstacle_avoidance)
+
+        self.franka.get_end_effector_position()     
 
 
 def main():
