@@ -1,6 +1,9 @@
 # Ignore frames 
-frames.gv
-frames.pdf
+**/frames.gv
+**/frames.pdf
+
+# Sublime Setup
+**/*.sublime-*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

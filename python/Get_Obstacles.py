@@ -27,6 +27,7 @@ from vartools.animator import Animator
 from test import myClass
 from obstacles_environment import ObstaclePublisher
 
+
 class DynamicalSystemAnimation(Animator):
     dim = 2
 
@@ -37,7 +38,7 @@ class DynamicalSystemAnimation(Animator):
         start_position=np.array([0, 0, 0]),
         x_lim=[-1.5, 2],
         y_lim=[-0.5, 2.5],
-        z_lim=[0.0 , 4.0 ]
+        z_lim=[0.0, 4.0],
     ):
         self.x_lim = x_lim
         self.y_lim = y_lim
@@ -136,23 +137,27 @@ def simple_point_robot():
     )
 
     obstacle_environment.append(
-    Cuboid(axes_length=[1.6, 0.7],
+        Cuboid(
+            axes_length=[1.6, 0.7],
             center_position=np.array([0.0, 0.0]),
             margin_absolut=0,
             orientation=-0,
             tail_effect=False,
             repulsion_coeff=1.4,
-            ))
+        )
+    )
 
     obstacle_environment.append(
-    Cuboid(axes_length=[0.5, 0.5],
-           center_position=np.array([0.0, 0.6]),
-           # center_position=np.array([0.9, 0.25]),
-           margin_absolut=0,
-           orientation=0,
-           tail_effect=False,
-           repulsion_coeff=1.4,
-           ))
+        Cuboid(
+            axes_length=[0.5, 0.5],
+            center_position=np.array([0.0, 0.6]),
+            # center_position=np.array([0.9, 0.25]),
+            margin_absolut=0,
+            orientation=0,
+            tail_effect=False,
+            repulsion_coeff=1.4,
+        )
+    )
 
 
 def run_stationary_point_avoiding_dynamic_robot():
@@ -175,16 +180,10 @@ def run_stationary_point_avoiding_dynamic_robot():
         distance_decrease=0.3,
     )
 
-    my_animation = DynamicalSystemAnimation(
-        dt_simulation=0.05,
-        dt_sleep=0.01,
-    )
+    my_animation = DynamicalSystemAnimation(dt_simulation=0.05, dt_sleep=0.01)
 
     my_animation.setup(
-        initial_dynamics,
-        obstacle_environment,
-        x_lim=[-3, 3],
-        y_lim=[-2.1, 2.1],
+        initial_dynamics, obstacle_environment, x_lim=[-3, 3], y_lim=[-2.1, 2.1]
     )
 
     my_animation.run(save_animation=False)
@@ -199,7 +198,6 @@ if (__name__) == "__main__":
     # simple_point_robot()
     # run_stationary_point_avoiding_dynamic_robot()
 
-
     newClass = myClass(5)
     val = newClass.getVal()
     print(val)
@@ -207,7 +205,3 @@ if (__name__) == "__main__":
     obstaclePublisher = ObstaclePublisher()
 
     postionss = ObstaclePublisher.getVal
-
-
-    
-

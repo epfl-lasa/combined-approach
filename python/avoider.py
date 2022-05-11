@@ -107,7 +107,7 @@ def simple_point_robot():
             axes_length=[0.6, 1.3],
             center_position=np.array([-0.2, 2.4]),
             margin_absolut=0,
-            # orientation=-30 * pi / 180, 
+            # orientation=-30 * pi / 180,
             tail_effect=False,
             repulsion_coeff=1.4,
         )
@@ -132,26 +132,27 @@ def simple_point_robot():
     )
 
     obstacle_environment.append(
-    Cuboid(axes_length=[1.6, 0.7],
+        Cuboid(
+            axes_length=[1.6, 0.7],
             center_position=np.array([0.0, 0.0]),
             margin_absolut=0,
             orientation=-0,
             tail_effect=False,
             repulsion_coeff=1.4,
-            ))
-    obstacle_environment.
+        )
+    )
 
     obstacle_environment.append(
-    Cuboid(axes_length=[0.5, 0.5],
-           center_position=np.array([0.0, 0.6]),
-           # center_position=np.array([0.9, 0.25]),
-           margin_absolut=0,
-           orientation=0,
-           tail_effect=False,
-           repulsion_coeff=1.4,
-           ))
-
-    
+        Cuboid(
+            axes_length=[0.5, 0.5],
+            center_position=np.array([0.0, 0.6]),
+            # center_position=np.array([0.9, 0.25]),
+            margin_absolut=0,
+            orientation=0,
+            tail_effect=False,
+            repulsion_coeff=1.4,
+        )
+    )
 
 
 def run_stationary_point_avoiding_dynamic_robot():
@@ -174,16 +175,10 @@ def run_stationary_point_avoiding_dynamic_robot():
         distance_decrease=0.3,
     )
 
-    my_animation = DynamicalSystemAnimation(
-        dt_simulation=0.05,
-        dt_sleep=0.01,
-    )
+    my_animation = DynamicalSystemAnimation(dt_simulation=0.05, dt_sleep=0.01)
 
     my_animation.setup(
-        initial_dynamics,
-        obstacle_environment,
-        x_lim=[-3, 3],
-        y_lim=[-2.1, 2.1],
+        initial_dynamics, obstacle_environment, x_lim=[-3, 3], y_lim=[-2.1, 2.1]
     )
 
     my_animation.run(save_animation=False)

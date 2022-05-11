@@ -14,9 +14,8 @@ from tf2_ros.transform_listener import TransformListener
 
 
 class FrameListener(Node):
-
     def __init__(self):
-        super().__init__('test_listener')
+        super().__init__("test_listener")
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -25,20 +24,19 @@ class FrameListener(Node):
         self.timer = self.create_timer(1.0, self.on_timer)
 
     def on_timer(self):
-        self.get_transformation("world","_frankalink8")
+        self.get_transformation("world", "_frankalink8")
 
-    def get_transformation(self,from_frame_rel,to_frame_rel):
+    def get_transformation(self, from_frame_rel, to_frame_rel):
         try:
             now = rclpy.time.Time()
-            trans = self.tf_buffer.lookup_transform(
-                to_frame_rel,
-                from_frame_rel,
-                now)
+            trans = self.tf_buffer.lookup_transform(to_frame_rel, from_frame_rel, now)
             print(trans)
         except TransformException as ex:
             self.get_logger().info(
-                f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
+                f"Could not transform {to_frame_rel} to {from_frame_rel}: {ex}"
+            )
             return
+
 
 def main():
     rclpy.init()
@@ -52,5 +50,5 @@ def main():
     print("We made it here ")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

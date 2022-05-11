@@ -16,6 +16,7 @@ import matplotlib
 from matplotlib import animation
 
 from dynamic_obstacle_avoidance.obstacles import Polygon
+
 # from dynamic_obstacle_avoidance.obstacles import Cuboid, Ellipse
 from dynamic_obstacle_avoidance.obstacles import CuboidXd as Cuboid
 from dynamic_obstacle_avoidance.obstacles import EllipseWithAxes as Ellipse
@@ -181,23 +182,16 @@ def run_stationary_point_avoiding_dynamic_robot():
         )
     )
 
-
     initial_dynamics = LinearSystem(
         attractor_position=np.array([0.0, 0.0]),
         maximum_velocity=1,
         distance_decrease=0.3,
     )
 
-    my_animation = DynamicalSystemAnimation(
-        dt_simulation=0.05,
-        dt_sleep=0.01,
-    )
+    my_animation = DynamicalSystemAnimation(dt_simulation=0.05, dt_sleep=0.01)
 
     my_animation.setup(
-        initial_dynamics,
-        obstacle_environment,
-        x_lim=[-3, 3],
-        y_lim=[-2.1, 2.1],
+        initial_dynamics, obstacle_environment, x_lim=[-3, 3], y_lim=[-2.1, 2.1]
     )
 
     my_animation.run(save_animation=False)
