@@ -26,6 +26,7 @@ class Obstacles:
 class ObstaclePublisher(Node):
     def __init__(self):
         super().__init__("obstacle_node")
+        print("obstalce init")
 
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)

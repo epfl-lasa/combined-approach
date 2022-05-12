@@ -9,9 +9,8 @@ import tf2_ros
 from tf2_ros import TransformBroadcaster, TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-
-from geometry_msgs.msg import Point, TransformStamped
 from sensor_msgs.msg import JointState
+from geometry_msgs.msg import Point, TransformStamped
 from std_msgs.msg import String
 from visualization_msgs.msg import Marker, MarkerArray
 
@@ -39,11 +38,13 @@ class FrankaRobotPublisher(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.initialize_control_point()
-
         self.subscription = self.create_subscription(
             JointState, "franka/joint_states", self.callback_jointstate, 3
         )
-        self.subscription  # prevent unused variable warning
+        # self.subscription  # prevent unused variable warning
+
+
+        
 
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -171,7 +172,7 @@ class FrankaRobotPublisher(Node):
             dur.nsec = 0
             
             trans = self.tf_buffer.lookup_transform(
-                to_frame_rel, from_frame_rel, now, dur
+                to_frame_rel, from_frame_rel, now
             )
             # print(now)
             # print(trans.header.frame_id)
@@ -204,18 +205,28 @@ class FrankaRobotPublisher(Node):
 
     def callback_jointstate(self, msg):
         self.msg_jointstate = msg
-        
+        print("callback_jointstate")
         # print('header', msg.header.stamp)
         # print(self.get_clock().now().to_msg())
         
         # self.joint_positions = msg.position
         # self.joint_velocity = msg.velocity
         # self.joint_effort = msg.effort
-        
+                
     def timer_callback(self):
         print("1. CONTROL POINTS")
         self.control_publisher.publish(self.control_point_array)
         # self.get_end_effector_position()
+
+
+        self._done = True
+
+    def spin_short(self):
+        self._done = False
+        rclpy.spin_until_future_complete(self,self)
+
+    def done(self):
+        return self._done
 
 
 def main(args=None):
