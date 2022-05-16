@@ -13,9 +13,7 @@ from obstacle_publisher import ObstaclePublisher
 from avoidance_publisher import AvoidancePublisher
 
 
-
-class PriorityExecutor(Executor):
-    
+class StandardExecutor(Executor):
     def __init__(self):
         super().__init__()
         # self.high_priority_nodes = set()
@@ -29,7 +27,6 @@ class PriorityExecutor(Executor):
         except StopIteration:
             pass
         else:
-            
             self.executor.submit(handler)
             
 
@@ -44,7 +41,7 @@ def main(args=None):
             franka_publisher, obstacles_publisher
         )
         
-        executor = PriorityExecutor()
+        executor = StandardExecutor()
         executor.add_node(franka_publisher)
         executor.add_node(obstacles_publisher)
         executor.add_node(avoidance_publisher)

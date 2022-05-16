@@ -32,6 +32,12 @@ COPY --chown=${USER} ../scripts ./scripts
 COPY --chown=${USER} ../src ./src
 COPY --chown=${USER} ../combined_approach ./combined_approach
 
+# Install Pinocchio for Python3.8 
+RUN echo "deb [arch=amd64] http://robotpkg.openrobots.org/packages/debian/pub $(lsb_release -cs) robotpkg" | sudo tee /etc/apt/sources.list.d/robotpkg.list
+RUN curl http://robotpkg.openrobots.org/packages/debian/robotpkg.key | sudo apt-key add -
+RUN sudo apt-get update && sudo apt install -qqy robotpkg-py38-pinocchio
+ENV PYTHONPATH "${PYTHONPATH}:/opt/openrobots/lib/python3.8/site-packages"
+
 WORKDIR /home/${USER}/ros2_ws/
 RUN /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash; colcon build --symlink-install"
 
