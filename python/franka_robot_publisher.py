@@ -44,8 +44,6 @@ class FrankaRobotPublisher(Node):
         # self.subscription  # prevent unused variable warning
 
 
-        
-
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
@@ -60,7 +58,6 @@ class FrankaRobotPublisher(Node):
         # self.marker_object_list = []
 
         self.br = TransformBroadcaster(self)
-
         self.frame_id_base = "_frankalink"
 
         link_1 = RigidLink(
@@ -186,8 +183,8 @@ class FrankaRobotPublisher(Node):
             return None
                 
     def get_end_effector_position(self):
-        # ee_trans = self.get_transformation("_frankalink8", "world")
-        ee_trans = self.get_transformation("_frankalink8", "_frankalink0")
+        ee_trans = self.get_transformation("_frankalink8", "world")
+        # ee_trans = self.get_transformation("_frankalink8", "_frankalink0")
         
         if ee_trans is None:
             return None
@@ -198,20 +195,20 @@ class FrankaRobotPublisher(Node):
             ee_trans.transform.translation.z,
         ]
 
-        print('ee pos', ee_pos)
+        # print('ee pos', ee_pos)
 
         return ee_pos
 
 
     def callback_jointstate(self, msg):
         self.msg_jointstate = msg
-        print("callback_jointstate")
-        # print('header', msg.header.stamp)
-        # print(self.get_clock().now().to_msg())
+    #     # print("callback_jointstate")
+    #     # print('header', msg.header.stamp)
+    #     # print(self.get_clock().now().to_msg())
         
-        # self.joint_positions = msg.position
-        # self.joint_velocity = msg.velocity
-        # self.joint_effort = msg.effort
+    #     # self.joint_positions = msg.position
+    #     # self.joint_velocity = msg.velocity
+    #     # self.joint_effort = msg.effort
                 
     def timer_callback(self):
         print("1. CONTROL POINTS")
