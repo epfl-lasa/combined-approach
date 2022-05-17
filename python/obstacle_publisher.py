@@ -93,8 +93,8 @@ class ObstaclePublisher(Node):
 
             self.obstacles_array.markers.append(self.marker_object)
 
-    def get_gamma(self):
-        
+    def get_gamma(self, position):
+        return self.obstacle_environment.get_minimum_gamma(position)
 
     def timer_callback(self):
         print("2. OBSTACLES ")

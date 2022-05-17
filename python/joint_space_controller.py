@@ -3,7 +3,7 @@
 import rclpy
 import state_representation as sr
 import std_msgs.msg
-# from dynamical_systems import create_cartesian_ds, DYNAMICAL_SYSTEM
+from dynamical_systems import create_cartesian_ds, DYNAMICAL_SYSTEM
 from combined_approach.robot_interface_node import RobotInterfaceNode
 
 import dynamic_obstacle_avoidance as doa
