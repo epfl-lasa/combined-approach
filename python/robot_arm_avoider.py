@@ -25,14 +25,21 @@ from obstacle_publisher import ObstaclePublisher
 
 
 class RobotArmAvoider(RobotInterfaceNode):
+    
     def __init__(
-        self, franka, obstacles_publisher, node_name="obstacle_avoider", timer_period=0.1
+        self, franka,
+        obstacles_publisher,
+        node_name="obstacle_avoider",
+        timer_period=0.1,
+        robot_name="franka"
     ):
         print("Start main-avoider.")
         
         super().__init__(node_name, "joint_states", "velocity_controller/command")
 
-        robot_name = self.get_parameter("robot_name").get_parameter_value().string_value
+        # robot_name = self.get_parameter("robot_name").get_parameter_value().string_value
+        
+        print(robot_name)
         self.init_robot_model(robot_name)
         
         self.franka = franka
@@ -44,9 +51,9 @@ class RobotArmAvoider(RobotInterfaceNode):
         target.set_position([0.6, +0.3, 0.5])
         target.set_orientation([0, 1, 0, 0])
         self._ds = create_cartesian_ds(DYNAMICAL_SYSTEM_TYPE.POINT_ATTRACTOR)
-        self._ds.set_parameter_value(
-            "attractor", target, sr.StateType.PARAMETER_CARTESIANPOSE
-        )
+        # self._ds.set_parameter_value(
+            # "attractor", target, sr.StateType.PARAMETER_CARTESIANPOSE
+        # )
         self._ds.set_parameter_value(
             "gain", [50, 50, 50, 10, 10, 10],
             sr.StateType.PARAMETER_DOUBLE_ARRAY
@@ -65,7 +72,7 @@ class RobotArmAvoider(RobotInterfaceNode):
         )
 
         while not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
+            self.get_logger().info('This service not available, waiting again...')
             
         request = GetParameters.Request()
         request.names = ['robot_description']
@@ -184,6 +191,7 @@ class RobotArmAvoider(RobotInterfaceNode):
 
 def main(args=None):
     rclpy.init(args=args)
+    
     try:
         franka_publisher = FrankaRobotPublisher()
         obstacles_publisher = ObstaclePublisher()

@@ -34,9 +34,9 @@ aica-docker interactive control-libraries-ros-demos:galactic-devel -u ros2 -v ${
 ```
 [IMPORTANT] Make sure that this is run in the base-folder.
 
-Run demo script:
+In the `python` folder, run demo script:
 ``` bash
-ros2 launch combined_approach demo.launch.py demo:=cartesian_twist_control
+
 ```
 
 Run file
