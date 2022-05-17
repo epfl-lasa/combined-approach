@@ -3,7 +3,7 @@
 import rclpy
 import state_representation as sr
 import std_msgs.msg
-from dynamical_systems import create_cartesian_ds, DYNAMICAL_SYSTEM
+# from dynamical_systems import create_cartesian_ds, DYNAMICAL_SYSTEM
 from combined_approach.robot_interface_node import RobotInterfaceNode
 
 import dynamic_obstacle_avoidance as doa
@@ -20,22 +20,22 @@ class JointSpaceVelocityControl(RobotInterfaceNode):
         )
         target.set_position([0.6, +0.3, 0.5])
         target.set_orientation([0, 1, 0, 0])
-        self._ds = create_cartesian_ds(DYNAMICAL_SYSTEM.POINT_ATTRACTOR)
-        self._ds.set_parameter_value(
-            "attractor", target, sr.StateType.PARAMETER_CARTESIANPOSE
-        )
-        self._ds.set_parameter_value(
-            "gain", [50, 50, 50, 10, 10, 10], sr.StateType.PARAMETER_DOUBLE_ARRAY
-        )
+        # self._ds = create_cartesian_ds(DYNAMICAL_SYSTEM.POINT_ATTRACTOR)
+        # self._ds.set_parameter_value(
+            # "attractor", target, sr.StateType.PARAMETER_CARTESIANPOSE
+        # )
+        # self._ds.set_parameter_value(
+            # "gain", [50, 50, 50, 10, 10, 10], sr.StateType.PARAMETER_DOUBLE_ARRAY
+        # )
 
         self._timer = self.create_timer(dt, self.control_loop)
 
     def control_loop(self):
         if self.state_received and rclpy.ok():
             twist = sr.CartesianTwist(
-                self._ds.evaluate(
-                    self.robot.forward_kinematics(sr.JointPositions(self.joint_state))
-                )
+                # self._ds.evaluate(
+                    # self.robot.forward_kinematics(sr.JointPositions(self.joint_state))
+                # )
             )
             twist.clamp(0.25, 0.25)
             command = self.robot.inverse_velocity(

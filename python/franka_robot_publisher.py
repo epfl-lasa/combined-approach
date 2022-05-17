@@ -9,22 +9,50 @@ import tf2_ros
 from tf2_ros import TransformBroadcaster, TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-from sensor_msgs.msg import JointState
-from geometry_msgs.msg import Point, TransformStamped
+
 from std_msgs.msg import String
+from geometry_msgs.msg import Point, TransformStamped, PointStamped
+# from tf2_geometry_msgs import PointStamped
+from sensor_msgs.msg import JointState
 from visualization_msgs.msg import Marker, MarkerArray
+
+import numpy as np
 
 
 class ControlPoint:
     def __init__(self, position, radius):
+        self.point = Point()
         self.position = position
+        
+        self.point.x = position[0]
+        self.point.y = position[1]
+        self.point.z = position[2]
+        
         self.radius = radius
 
 
 class RigidLink:
-    def __init__(self, control_point_list, link_id):
+    
+    def __init__(self, control_point_list, link_id, frame_id_base="_frankalink"):
         self.control_point_list = control_point_list
         self.link_id = link_id
+
+        self.link_name = frame_id_base + str(self.link_id)
+
+    def get_control_points_stamped(self, time_now):
+        # if time_now is None:
+            # rclpy.time.Time.to_msg()
+
+        point_list = []
+        for cp in self.control_point_list:
+            point_stamped = PointStamped()
+            point_stamped.point = cp.point
+            point_stamped.header.frame_id = self.link_name
+            point_stamped.header.stamp = time_now
+
+            point_list.append(point_stamped)
+            
+        return point_list
 
 
 class FrankaRobotPublisher(Node):
@@ -43,11 +71,40 @@ class FrankaRobotPublisher(Node):
         )
         # self.subscription  # prevent unused variable warning
 
-
-        
-
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
+
+    @property
+    def n_links(self):
+        return len(self.link_dict)
+
+    def get_control_radii_list(self):
+        radii_list = []
+        for key, links in self.link_dict.items():
+            radii_list.append([point.radius for point in links.control_point_list])
+
+        return radii_list
+
+    def get_link_points_in_global_frame(self, link_id):
+        trafo = self.get_transformation(link_id, 'world')
+        if trafo is None:
+            return []
+        position_list_trafo = []
+
+        for cp in self.link_dict[link_id].control_point_list:
+            position_list_trafo.append(cp.position + np.array([
+                trafo.transform.translation.x,
+                trafo.transform.translation.y,
+                trafo.transform.translation.z
+            ]))
+        # points_stamped_list = self.link_dict[link_id].get_control_points_stamped(
+            # time_now=self.get_clock().now().to_msg()
+        # )
+        
+        # for point in points_stamped_list:
+            # point_list.append(self.tf_buffer.transform(point, 'world'))
+        
+        return position_list_trafo
 
     def initialize_control_point(self):
         self.link_dict = {}
@@ -126,7 +183,6 @@ class FrankaRobotPublisher(Node):
 
 
     def add_link(self, frame_id, link: RigidLink):
-
         self.link_dict[frame_id] = link
         i = link.link_id * 10
 
@@ -140,9 +196,9 @@ class FrankaRobotPublisher(Node):
             self.marker_object.type = Marker.SPHERE
             self.marker_object.action = Marker.ADD
 
-            self.marker_object.pose.position.x = cp.position[0]
-            self.marker_object.pose.position.y = cp.position[1]
-            self.marker_object.pose.position.z = cp.position[2]
+            self.marker_object.pose.position.x = cp.point.x
+            self.marker_object.pose.position.y = cp.point.y
+            self.marker_object.pose.position.z = cp.point.z
 
             self.marker_object.pose.orientation.x = 0.0
             self.marker_object.pose.orientation.y = 0.0
@@ -198,16 +254,12 @@ class FrankaRobotPublisher(Node):
             ee_trans.transform.translation.z,
         ]
 
-        print('ee pos', ee_pos)
-
         return ee_pos
 
 
     def callback_jointstate(self, msg):
         self.msg_jointstate = msg
-        print("callback_jointstate")
-        # print('header', msg.header.stamp)
-        # print(self.get_clock().now().to_msg())
+        # print("callback_jointstate")
         
         # self.joint_positions = msg.position
         # self.joint_velocity = msg.velocity

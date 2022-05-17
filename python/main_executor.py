@@ -1,11 +1,12 @@
+#!/usr/bin/python3
+
 from concurrent.futures import ThreadPoolExecutor
 import os
 
-from examples_rclpy_executors.listener import Listener
-from examples_rclpy_executors.talker import Talker
 import rclpy
-from rclpy.executors import Executor
 from rclpy.node import Node
+from rclpy.executors import Executor
+
 from std_msgs.msg import String
 
 from franka_robot_publisher import FrankaRobotPublisher

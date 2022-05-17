@@ -93,6 +93,9 @@ class ObstaclePublisher(Node):
 
             self.obstacles_array.markers.append(self.marker_object)
 
+    def get_gamma(self):
+        
+
     def timer_callback(self):
         print("2. OBSTACLES ")
         sinus_value = math.sin(self.i / 10) / 2
