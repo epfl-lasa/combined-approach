@@ -54,10 +54,10 @@ class RobotArmAvoider(RobotInterfaceNode):
         # self._ds.set_parameter_value(
             # "attractor", target, sr.StateType.PARAMETER_CARTESIANPOSE
         # )
-        self._ds.set_parameter_value(
-            "gain", [50, 50, 50, 10, 10, 10],
-            sr.StateType.PARAMETER_DOUBLE_ARRAY
-        )
+        # self._ds.set_parameter_value(
+            # "gain", [50, 50, 50, 10, 10, 10],
+            # sr.StateType.PARAMETER_DOUBLE_ARRAY
+        # )
         
         # Seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -66,7 +66,8 @@ class RobotArmAvoider(RobotInterfaceNode):
         self.weights_section = []
         self.weights_link = []
 
-    def initialize_urdf_from_parameterserver(self):
+    def initialize_urdf_from_parameterserver_with_pinocchio(self):
+        # => this is currently not used anymore
         self.client = self.create_client(
             GetParameters, 'franka/robot_state_publisher/get_parameters'
         )
