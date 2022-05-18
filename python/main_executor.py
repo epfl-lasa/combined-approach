@@ -37,10 +37,7 @@ def main(args=None):
     try:
         franka_publisher = FrankaRobotPublisher()
         obstacles_publisher = ObstaclePublisher()
-        # self.avoidance_publisher = AvoidancePublisher(
-        avoidance_publisher = AvoidancePublisher(
-            franka_publisher, obstacles_publisher
-        )
+        avoidance_publisher = AvoidancePublisher(franka_publisher, obstacles_publisher)
         
         executor = StandardExecutor()
         executor.add_node(franka_publisher)
