@@ -53,6 +53,7 @@ class FrankaRobotPublisher(Node):
             MarkerArray, "/control_points", 5
         )
         self.control_point_array = MarkerArray()
+        self.cp_radius=0.16
 
         # self.control_publishers = []
         # self.marker_object_list = []
@@ -60,10 +61,20 @@ class FrankaRobotPublisher(Node):
         self.br = TransformBroadcaster(self)
         self.frame_id_base = "_frankalink"
 
+        link_0 = RigidLink(
+            [
+                ControlPoint([0.0, 0.0, 0.06], 0.21),   # X:FRONT Y:RIGHT Z:UP
+                ControlPoint([-0.10, 0.0, 0.03], 0.15), # X:FRONT Y:RIGHT Z:UP
+            ],
+            link_id=0,
+        )
+        self.add_link(frame_id=self.frame_id_base + str(link_0.link_id), link=link_0)
+
         link_1 = RigidLink(
             [
-                ControlPoint([0.0, 0.0, -0.15], 0.18),
-                ControlPoint([0.0, -0.075, 0.01], 0.18),
+                ControlPoint([0.0, 0.0, -0.15], self.cp_radius),  # X:FRONT Y:RIGHT Z:UP
+                ControlPoint([0.0, -0.03, -0.05], 0.15),           # X:FRONT Y:RIGHT Z:UP
+                ControlPoint([0.0, -0.055, 0.01], self.cp_radius),# X:FRONT Y:RIGHT Z:UP
             ],
             link_id=1,
         )
@@ -71,8 +82,8 @@ class FrankaRobotPublisher(Node):
 
         link_2 = RigidLink(
             [
-                ControlPoint([0.0, -0.007, 0.07], 0.18),
-                ControlPoint([0.0, -0.125, 0.0], 0.18),
+                ControlPoint([0.0, -0.009, 0.054], self.cp_radius), # X:FRONT Y:UP Z:RIGHT
+                ControlPoint([0.0, -0.125, 0.0], self.cp_radius),  # X:FRONT Y:UP Z:UP
             ],
             link_id=2,
         )
@@ -80,8 +91,8 @@ class FrankaRobotPublisher(Node):
 
         link_3 = RigidLink(
             [
-                ControlPoint([0.0, 0.0, -0.075], 0.15),
-                ControlPoint([0.09, 0.07, 0.0], 0.18),
+                ControlPoint([0.0, 0.0, -0.075], self.cp_radius),  # X:FRONT Y:RIGHT Z:UP
+                ControlPoint([0.09, 0.07, 0.0], self.cp_radius),
             ],
             link_id=3,
         )
@@ -89,8 +100,8 @@ class FrankaRobotPublisher(Node):
 
         link_4 = RigidLink(
             [
-                ControlPoint([0.003, 0.0, 0.066], 0.18),
-                ControlPoint([-0.076, 0.076, 0.0], 0.15),
+                ControlPoint([0.003, 0.0, 0.066], self.cp_radius),
+                ControlPoint([-0.076, 0.076, 0.0], self.cp_radius),
             ],
             link_id=4,
         )
@@ -98,9 +109,9 @@ class FrankaRobotPublisher(Node):
 
         link_5 = RigidLink(
             [
-                ControlPoint([0.0, 0.0, -0.21], 0.15),
-                ControlPoint([0.0, 0.08, -0.129], 0.16),
-                ControlPoint([0.0, 0.073, 0.0], 0.15),
+                ControlPoint([0.0, 0.0, -0.21], self.cp_radius),
+                ControlPoint([0.0, 0.08, -0.129], self.cp_radius),
+                ControlPoint([0.0, 0.073, 0.0], self.cp_radius),
             ],
             link_id=5,
         )
@@ -108,17 +119,27 @@ class FrankaRobotPublisher(Node):
 
         link_6 = RigidLink(
             [
-                ControlPoint([0.0, 0.0, 0.042], 0.15),
-                ControlPoint([0.1, 0.019, 0.0], 0.16),
+                ControlPoint([0.0, 0.0, 0.042], self.cp_radius),
+                ControlPoint([0.1, 0.019, 0.0], self.cp_radius),
             ],
             link_id=6,
         )
         self.add_link(frame_id=self.frame_id_base + str(link_6.link_id), link=link_6)
 
-        link_7 = RigidLink([ControlPoint([0.0, 0.0, 0.076], 0.1)], link_id=7)
+        link_7 = RigidLink(
+            [
+                ControlPoint([0.0, 0.0, 0.076],self.cp_radius)
+            ],
+            link_id=7
+        )
         self.add_link(frame_id=self.frame_id_base + str(link_7.link_id), link=link_7)
 
-        link_8 = RigidLink([ControlPoint([0.0, 0.0, 0.0], 0.1)], link_id=8)
+        link_8 = RigidLink(
+            [
+                ControlPoint([0.0, 0.0, 0.0], self.cp_radius)
+            ],
+            link_id=8
+        )
         self.add_link(frame_id=self.frame_id_base + str(link_8.link_id), link=link_8)
 
 
@@ -151,7 +172,7 @@ class FrankaRobotPublisher(Node):
             self.marker_object.scale.z = cp.radius
 
             self.marker_object.color.r = 2.0
-            self.marker_object.color.g = 5.0
+            self.marker_object.color.g = 1.0
             self.marker_object.color.b = 0.0
 
             # This has to be, otherwise it will be transparent

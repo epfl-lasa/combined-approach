@@ -43,7 +43,6 @@ class FrankaRobotPublisher(Node):
         )
         # self.subscription  # prevent unused variable warning
 
-
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
@@ -59,11 +58,21 @@ class FrankaRobotPublisher(Node):
 
         self.br = TransformBroadcaster(self)
         self.frame_id_base = "_frankalink"
+        self.cp_radius = 0.3
+
+        link_0 = RigidLink(
+            [
+                ControlPoint([0.0, 0.0, 0.08], self.cp_radius)
+            ],
+            link_id=0,
+        )
+        self.add_link(frame_id=self.frame_id_base + str(link_0.link_id), link=link_0)
+
+
 
         link_1 = RigidLink(
             [
-                ControlPoint([0.0, 0.0, -0.15], 0.18),
-                ControlPoint([0.0, -0.075, 0.01], 0.18),
+                ControlPoint([0.0, -0.035, -0.0], self.cp_radius)
             ],
             link_id=1,
         )
@@ -71,8 +80,7 @@ class FrankaRobotPublisher(Node):
 
         link_2 = RigidLink(
             [
-                ControlPoint([0.0, -0.007, 0.07], 0.18),
-                ControlPoint([0.0, -0.125, 0.0], 0.18),
+                ControlPoint([0.0, -0.074, 0.03], self.cp_radius)
             ],
             link_id=2,
         )
@@ -80,8 +88,7 @@ class FrankaRobotPublisher(Node):
 
         link_3 = RigidLink(
             [
-                ControlPoint([0.0, 0.0, -0.075], 0.15),
-                ControlPoint([0.09, 0.07, 0.0], 0.18),
+                ControlPoint([0.05, 0.03, -0.02], self.cp_radius)
             ],
             link_id=3,
         )
@@ -89,8 +96,7 @@ class FrankaRobotPublisher(Node):
 
         link_4 = RigidLink(
             [
-                ControlPoint([0.003, 0.0, 0.066], 0.18),
-                ControlPoint([-0.076, 0.076, 0.0], 0.15),
+                ControlPoint([-0.07, 0.03, 0.02], self.cp_radius)
             ],
             link_id=4,
         )
@@ -98,9 +104,7 @@ class FrankaRobotPublisher(Node):
 
         link_5 = RigidLink(
             [
-                ControlPoint([0.0, 0.0, -0.21], 0.15),
-                ControlPoint([0.0, 0.08, -0.129], 0.16),
-                ControlPoint([0.0, 0.073, 0.0], 0.15),
+                ControlPoint([0.0, 0.05, -0.11], self.cp_radius)
             ],
             link_id=5,
         )
@@ -108,18 +112,17 @@ class FrankaRobotPublisher(Node):
 
         link_6 = RigidLink(
             [
-                ControlPoint([0.0, 0.0, 0.042], 0.15),
-                ControlPoint([0.1, 0.019, 0.0], 0.16),
+                ControlPoint([0.08, 0.0, 0.05], self.cp_radius)
             ],
             link_id=6,
         )
         self.add_link(frame_id=self.frame_id_base + str(link_6.link_id), link=link_6)
 
-        link_7 = RigidLink([ControlPoint([0.0, 0.0, 0.076], 0.1)], link_id=7)
-        self.add_link(frame_id=self.frame_id_base + str(link_7.link_id), link=link_7)
+        # link_7 = RigidLink([ControlPoint([0.1, 0.0, self.cp_radius], 0.1)], link_id=7)
+        # self.add_link(frame_id=self.frame_id_base + str(link_7.link_id), link=link_7)
 
-        link_8 = RigidLink([ControlPoint([0.0, 0.0, 0.0], 0.1)], link_id=8)
-        self.add_link(frame_id=self.frame_id_base + str(link_8.link_id), link=link_8)
+        # link_8 = RigidLink([ControlPoint([0.0, 0.0, 0.0], self.cp_radius)], link_id=8)
+        # self.add_link(frame_id=self.frame_id_base + str(link_8.link_id), link=link_8)
 
 
     def add_link(self, frame_id, link: RigidLink):
@@ -151,8 +154,8 @@ class FrankaRobotPublisher(Node):
             self.marker_object.scale.z = cp.radius
 
             self.marker_object.color.r = 2.0
-            self.marker_object.color.g = 5.0
-            self.marker_object.color.b = 0.0
+            self.marker_object.color.g = 0.0
+            self.marker_object.color.b = 3.0
 
             # This has to be, otherwise it will be transparent
             self.marker_object.color.a = 1.0

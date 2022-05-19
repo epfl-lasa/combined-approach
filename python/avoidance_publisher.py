@@ -2,8 +2,9 @@
 #!python
 
 import rclpy
-from rclpy.node import Node
+import numpy as np
 
+from rclpy.node import Node
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point
 from std_msgs.msg import String
@@ -21,23 +22,37 @@ class AvoidancePublisher(Node):
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        self.initial_dynamics = initial_dynamics
+        self.initial_dynamics = LinearSystem(
+        attractor_position=np.array([0.0, 0.0, 0.0]),
+        maximum_velocity=1,
+        distance_decrease=0.3,
+        )
 
-        self.x_lim = [-1.5, 2, 2]
-        self.y_lim = [-1.5, 2, 2]
-        self.z_lim = [-1.5, 2, 2]
+        # start_ee_pos = [0.5819279740349097, -0.0038269086217280106, 0.6485108332864515]
+        # start_ee_pos = [0.26891330965025634, -0.30426033544813147, 1.022167526752325]
+        # self.franka.set_end_effector_position(start_ee_pos)
+
+    def update_step (self, ii):
+        if not ii % 10:
+            print(f"it={ii}")
+
+        # iterate over ii to just use the pos of the ee
+        velocity = self.dynamic_avoider.evaluate(self.position_list[:,ii-1])
+        
+
+    def has_converged(self, ii) -> bool:
+        return np.allclose(self.position_list[:,ii],self.position_list[:,ii-1])
+
 
     def timer_callback(self):
         print("3. AVOIDANCE")
-        ee_pos = self.franka.get_end_effector_position()
-        print(ee_pos)
+        # ee_pos = self.franka.get_end_effector_position()
+        # print(ee_pos)
 
-        obstacles = self.obstacles_publisher.get_obstacles()
-        print(obstacles)
+        # obstacles = self.obstacles_publisher.get_obstacles()
+        # print(obstacles)
 
         
-
-
 def main(args=None):
     rclpy.init(args=args)
     avoidance = AvoidancePublisher()
