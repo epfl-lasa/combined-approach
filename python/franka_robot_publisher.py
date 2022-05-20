@@ -1,5 +1,8 @@
 #!/usr/bin/python3
-#!python
+import logging
+
+import numpy as np
+from scipy.spatial.transform import Rotation
 
 import rclpy
 from rclpy.node import Node
@@ -15,8 +18,6 @@ from geometry_msgs.msg import Point, TransformStamped, PointStamped
 # from tf2_geometry_msgs import PointStamped
 from sensor_msgs.msg import JointState
 from visualization_msgs.msg import Marker, MarkerArray
-
-import numpy as np
 
 
 class ControlPoint:
@@ -78,6 +79,10 @@ class FrankaRobotPublisher(Node):
     def n_links(self):
         return len(self.link_dict)
 
+    @property
+    def n_joints(self):
+        return len(self.link_dict)
+
     def get_control_radii_list(self):
         radii_list = []
         for key, links in self.link_dict.items():
@@ -85,26 +90,16 @@ class FrankaRobotPublisher(Node):
 
         return radii_list
 
-    def get_link_points_in_global_frame(self, link_id):
-        trafo = self.get_transformation(link_id, 'world')
-        if trafo is None:
-            return []
-        position_list_trafo = []
-
-        for cp in self.link_dict[link_id].control_point_list:
-            position_list_trafo.append(cp.position + np.array([
-                trafo.transform.translation.x,
-                trafo.transform.translation.y,
-                trafo.transform.translation.z
-            ]))
+    # def get_link_control_points_and_link_start(self, link_id):
         # points_stamped_list = self.link_dict[link_id].get_control_points_stamped(
             # time_now=self.get_clock().now().to_msg()
         # )
         
         # for point in points_stamped_list:
             # point_list.append(self.tf_buffer.transform(point, 'world'))
-        
-        return position_list_trafo
+        # return link_start, position_list_trafo
+
+    # def get_link_bases_in_global_frame(self):
 
     def initialize_control_point(self):
         self.link_dict = {}
@@ -239,6 +234,7 @@ class FrankaRobotPublisher(Node):
                 f"Could not transform {to_frame_rel} to {from_frame_rel}: {ex}"
             )
             return None
+
                 
     def get_end_effector_position(self):
         ee_trans = self.get_transformation("_frankalink8", "world")
@@ -255,7 +251,6 @@ class FrankaRobotPublisher(Node):
 
         return ee_pos
 
-
     def callback_jointstate(self, msg):
         self.msg_jointstate = msg
     #     # self.joint_positions = msg.position
@@ -263,12 +258,9 @@ class FrankaRobotPublisher(Node):
     #     # self.joint_effort = msg.effort
                 
     def timer_callback(self):
-        print("1. CONTROL POINTS")
+        logging.info("[CONTROL POINTS] callback starting.")
         self.control_publisher.publish(self.control_point_array)
         # self.get_end_effector_position()
-
-
-        self._done = True
 
     def spin_short(self):
         self._done = False
@@ -289,4 +281,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
- 

@@ -20,13 +20,6 @@ class JointSpaceVelocityControl(RobotInterfaceNode):
         )
         target.set_position([0.6, +0.3, 0.5])
         target.set_orientation([0, 1, 0, 0])
-        # self._ds = create_cartesian_ds(DYNAMICAL_SYSTEM.POINT_ATTRACTOR)
-        # self._ds.set_parameter_value(
-            # "attractor", target, sr.StateType.PARAMETER_CARTESIANPOSE
-        # )
-        # self._ds.set_parameter_value(
-            # "gain", [50, 50, 50, 10, 10, 10], sr.StateType.PARAMETER_DOUBLE_ARRAY
-        # )
 
         self._timer = self.create_timer(dt, self.control_loop)
 

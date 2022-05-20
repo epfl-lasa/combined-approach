@@ -1,6 +1,5 @@
 # Semester_Project_Lassa
 
-
 # Setup:
 This runs in the combination with the simulator, for this get:
 (make sure to clone the `develop` branch)

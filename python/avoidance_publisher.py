@@ -9,10 +9,9 @@ from geometry_msgs.msg import Point
 from std_msgs.msg import String
 from vartools.dynamical_systems import LinearSystem
 
-# Helper class
-
 
 class AvoidancePublisher(Node):
+# Helper class
     def __init__(self, franka, obstacles_publisher):
         super().__init__("obstace_avoidance")
         self.franka = franka

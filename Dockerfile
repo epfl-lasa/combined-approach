@@ -2,13 +2,22 @@ ARG ROS_VERSION=galactic
 FROM ghcr.io/aica-technology/ros2-control-libraries:${ROS_VERSION}
 
 # upgrade ament_cmake_python
-RUN sudo apt update && sudo apt install -y ros-${ROS_DISTRO}-ament-cmake-python && sudo rm -rf /var/lib/apt/lists/*
+RUN sudo apt update && sudo apt install -y ros-${ROS_DISTRO}-ament-cmake-python
+
+# Install on of our favorite editors and tmux:
+RUN sudo apt install -y vim-python-jedi
+RUN sudo apt install -y tmux
+RUN sudo apt install python-is-python3 -y
+
+# Remove app-list after install
+# this should only be done for final production, since it makes installing / probing difficult
+RUN	sudo rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p ${HOME}/lib
 WORKDIR ${HOME}/lib
 
 # Dynamic Obstacle Avoidance Library
-RUN echo 32
+RUN echo 40
 RUN git clone -b main --single-branch https://github.com/epfl-lasa/dynamic_obstacle_avoidance
 RUN  python3.8 -m pip install -r dynamic_obstacle_avoidance/requirements.txt
 RUN cd dynamic_obstacle_avoidance && sudo python3.8 -m pip install --editable .
@@ -41,4 +50,7 @@ ENV PYTHONPATH "${PYTHONPATH}:/opt/openrobots/lib/python3.8/site-packages"
 WORKDIR /home/${USER}/ros2_ws/
 RUN /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash; colcon build --symlink-install"
 
-WORKDIR /home/${USER}/ros2_ws/src/combined_approach
+WORKDIR /home/${USER}/ros2_ws/src/combined_approach/python
+
+ENTRYPOINT tmux
+
