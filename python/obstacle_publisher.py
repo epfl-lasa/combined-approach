@@ -43,7 +43,9 @@ class ObstaclePublisher(Node):
         self.obstacle_environment = ObstacleContainer()
 
         spheres = Obstacles(
-            [Obstacle([0.0, 0.5, 0.0], 0.3), Obstacle([0.3, -0.5, 0.0], 0.3)],
+            [Obstacle([0.0, 0.5, 0.0], 0.3),
+             Obstacle([0.58, 0.0, 0.63], 0.10),  # horizontal static ee crash
+             Obstacle([0.3, -0.5, 0.0], 0.3)], 
             obstacle_type=Marker.SPHERE,
         )
 
@@ -96,6 +98,7 @@ class ObstaclePublisher(Node):
             self.marker_object.color.b = 0.278431373
 
 
+
             # This has to be, otherwise it will be transparent
             self.marker_object.color.a = 1.0
 
@@ -130,6 +133,7 @@ class ObstaclePublisher(Node):
                 )
 
     def get_obstacles(self):
+        # print("returned")
         return self.obstacle_environment
 
     def get_gamma(self, position):
@@ -142,8 +146,11 @@ class ObstaclePublisher(Node):
         for ii, obs in enumerate(self.obstacles_array.markers):
 
             if obs.type == Marker.SPHERE:
-                obs.pose.position.z = sinus_value *j + 0.5 + 0.12
-                j *= -1
+                if not ii % 2:
+                    obs.pose.position.z = sinus_value *j + 0.5 + 0.12
+                    j *= -1
+                else:
+                    obs.pose.position.y = sinus_value *j 
             elif obs.type == Marker.CUBE:
                 pass
                 # obs.pose.position.z=-sinus_value

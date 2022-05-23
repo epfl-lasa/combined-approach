@@ -9,9 +9,16 @@ from rclpy.executors import Executor
 
 from std_msgs.msg import String
 
-from franka_robot_publisher import FrankaRobotPublisher
+# from franka_robot_publisher import FrankaRobotPublisher
+from franka_robot_publisher_small_CP import FrankaRobotPublisher
+# from franka_robot_publisher_1CP import FrankaRobotPublisher
+# from franka_robot_publisher_1CP_large import FrankaRobotPublisher
 from obstacle_publisher import ObstaclePublisher
 from avoidance_publisher import AvoidancePublisher
+# from pose_publisher import PosePublisher
+
+from wrench_publisher import WrenchPublisher
+from attractor_publisher import AttractorPublisher
 
 
 class StandardExecutor(Executor):
@@ -40,9 +47,18 @@ def main(args=None):
         avoidance_publisher = AvoidancePublisher(franka_publisher, obstacles_publisher)
         
         executor = StandardExecutor()
+        # pose_publisher = PosePublisher()
+        wrench_publisher = WrenchPublisher()
+        attractor_publisher = AttractorPublisher([0.5, 0.0, 0.5])
+
+
         executor.add_node(franka_publisher)
         executor.add_node(obstacles_publisher)
         executor.add_node(avoidance_publisher)
+        # executor.add_node(pose_publisher)
+        executor.add_node(wrench_publisher)
+        executor.add_node(attractor_publisher)
+
         try:
             executor.spin()
         finally:
@@ -51,6 +67,9 @@ def main(args=None):
             franka_publisher.destroy_node()
             obstacles_publisher.destroy_node()
             avoidance_publisher.destroy_node()
+            # pose_publisher.destroy_node()
+            wrench_publisher.destroy_node()
+            attractor_publisher.destroy_node()
     finally:
         rclpy.shutdown()
 
