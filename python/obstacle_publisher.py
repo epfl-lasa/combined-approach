@@ -136,7 +136,7 @@ class ObstaclePublisher(Node):
         return self.obstacle_environment.get_minimum_gamma(position)
 
     def timer_callback(self):
-        logging.info("[OBSTACLE_PUBLISHER] Timer callback.")
+        # logging.info("[OBSTACLE_PUBLISHER] Timer callback.")
         sinus_value = math.sin(self.i / 10) / 2
         j = 1
         for ii, obs in enumerate(self.obstacles_array.markers):

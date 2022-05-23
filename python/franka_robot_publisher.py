@@ -258,7 +258,7 @@ class FrankaRobotPublisher(Node):
     #     # self.joint_effort = msg.effort
                 
     def timer_callback(self):
-        logging.info("[CONTROL POINTS] callback starting.")
+        # logging.info("[CONTROL POINTS] callback starting.")
         self.control_publisher.publish(self.control_point_array)
         # self.get_end_effector_position()
 
