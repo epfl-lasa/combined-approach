@@ -10,6 +10,7 @@ from rclpy.executors import Executor
 from std_msgs.msg import String
 
 from franka_robot_publisher import FrankaRobotPublisher
+
 # from franka_robot_publisher_small_CP import FrankaRobotPublisher
 
 # from franka_robot_publisher_1CP import FrankaRobotPublisher
@@ -45,26 +46,24 @@ class StandardExecutor(Executor):
 
 def main(args=None):
     rclpy.init(args=args)
-    
+
     try:
         franka_publisher = FrankaRobotPublisher()
         obstacles_publisher = ObstaclePublisher()
         # avoidance_publisher = AvoidancePublisher(franka_publisher, obstacles_publisher)
-        avoidance_publisher = RobotArmAvoider(
-            franka_publisher, obstacles_publisher)
+        avoidance_publisher = RobotArmAvoider(franka_publisher, obstacles_publisher)
 
         wrench_publisher = WrenchPublisher()
         attractor_publisher = AttractorPublisher([0.5, 0.0, 0.5])
 
-        
         executor = StandardExecutor()
         # pose_publisher = PosePublisher()
         executor.add_node(franka_publisher)
         executor.add_node(obstacles_publisher)
         executor.add_node(avoidance_publisher)
-        
+
         # executor.add_node(pose_publisher)
-        
+
         executor.add_node(wrench_publisher)
         executor.add_node(attractor_publisher)
 
@@ -72,7 +71,7 @@ def main(args=None):
             print("Spinning")
             executor.spin()
             print("Spinning Done")
-            
+
         finally:
             executor.shutdown()
 
@@ -82,7 +81,7 @@ def main(args=None):
             # pose_publisher.destroy_node()
             wrench_publisher.destroy_node()
             attractor_publisher.destroy_node()
-            
+
     finally:
         rclpy.shutdown()
 

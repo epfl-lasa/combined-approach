@@ -12,10 +12,10 @@ import dynamic_obstacle_avoidance as doa
 class JointSpaceVelocityControl(RobotInterfaceNode):
     def __init__(self, node_name, dt):
         super().__init__(node_name, "joint_states", "velocity_controller/command")
-        
+
         # robot_name = self.get_parameter("robot_name").get_parameter_value().string_value
         robot_name = "franka"
-        
+
         self.init_robot_model(robot_name)
 
         target = sr.CartesianPose(

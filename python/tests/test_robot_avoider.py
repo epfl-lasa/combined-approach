@@ -19,24 +19,21 @@ class TestArmAvoider(RobotArmAvoider):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._active_joints = ['_frankalink2', '_frankalink4']
+        self._active_joints = ["_frankalink2", "_frankalink4"]
 
         self.franka.control_point_array.markers = []
         for key in self.franka.link_dict.keys():
             if key not in self._active_joints:
                 self.franka.link_dict[key] = RigidLink([], link_id=key[-1])
                 continue
-            
-            self.franka.add_link(
-                frame_id=key,
-                link=self.franka.link_dict[key]
-            )
+
+            self.franka.add_link(frame_id=key, link=self.franka.link_dict[key])
 
     def update_modulation_control(self, it_joint):
         frame_name = self.robot.get_joint_frames()[it_joint]
         if frame_name not in self._active_joints:
             return
-        
+
         super().update_modulation_control(it_joint)
 
     def update_correction_control(self, it_joint):
@@ -61,6 +58,7 @@ def test_main_class():
     from main_executor import StandardExecutor
 
     from obstacle_publisher import Obstacle, Obstacles
+
     obstacles_array = Obstacles(
         [Obstacle([0.5, 0.0, 0.25], 0.3)],
         obstacle_type=Marker.SPHERE,
@@ -70,13 +68,11 @@ def test_main_class():
 
     try:
         attractor_position = np.array([0.5, 0.5, 0.0])
-        
+
         franka_publisher = FrankaRobotPublisher()
         obstacles_publisher = ObstaclePublisher(obstacles_array=obstacles_array)
         robot_arm_avoider = TestArmAvoider(
-            franka_publisher,
-            obstacles_publisher,
-            target_position=attractor_position
+            franka_publisher, obstacles_publisher, target_position=attractor_position
         )
 
         attractor_publisher = AttractorPublisher(attractor_position)
@@ -87,7 +83,7 @@ def test_main_class():
         executor.add_node(robot_arm_avoider)
 
         executor.add_node(attractor_publisher)
-        
+
         try:
             executor.spin()
         finally:

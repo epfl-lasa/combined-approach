@@ -12,6 +12,7 @@ from numpy import linalg as LA
 from scipy.spatial.transform import Rotation
 
 import rclpy
+
 # from rclpy.node import Node
 from rcl_interfaces.srv import GetParameters
 
@@ -85,9 +86,10 @@ class RobotArmAvoider(RobotInterfaceNode):
         self._ds.set_parameter_value(
             "gain", [50, 50, 50, 10, 10, 10], sr.ParameterType.DOUBLE_ARRAY
         )
-        
+
         self._ds_position_only = LinearSystem(
-            attractor_position=target_position, maximum_velocity=max_linear_velocity)
+            attractor_position=target_position, maximum_velocity=max_linear_velocity
+        )
 
         self._modulator = ModulationAvoider(
             obstacle_environment=self.obstacles_publisher.obstacle_environment,
@@ -113,7 +115,8 @@ class RobotArmAvoider(RobotInterfaceNode):
             self._visualizer = None
 
         self.velocity_publisher = self.create_publisher(
-            Float64MultiArray, publish_topic, 5)
+            Float64MultiArray, publish_topic, 5
+        )
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         print("Controller init done")
@@ -129,19 +132,19 @@ class RobotArmAvoider(RobotInterfaceNode):
 
         logging.info("Updating global control points.")
         self.update_control_points()
-        
+
         logging.info("Getting gamma-weights")
         self.update_gamma_weights()
-        
+
         logging.info("Getting influence weights")
         self.update_influence_weights()
 
-        print('link weights', repr(np.round(self.weights_link, 1)))
+        print("link weights", repr(np.round(self.weights_link, 1)))
 
         if self._visualizer:
             self._visualizer.reset_initial_array()
             self._visualizer.reset_modulated_array()
-            
+
         # Iterate over all links and ensure collision free avoidance, while
         # trying to follow the initial control command
         self.final_control_velocities = (
@@ -171,9 +174,9 @@ class RobotArmAvoider(RobotInterfaceNode):
         initial_control = self.robot.inverse_velocity(
             self.ee_twist, sr.JointPositions(self.joint_state)
         )
-        
+
         self.initial_control_velocities = initial_control.get_velocities()
-        
+
     def get_direction_of_joint_rotation(self, it_joint):
         """Returns the direction of rotation of a joint along the robot.
         Assumption to have only rotational joints."""
@@ -203,7 +206,7 @@ class RobotArmAvoider(RobotInterfaceNode):
         mean_vel_cps = np.zeros(self.dimension)
         mean_omega_cps = np.zeros((self.dimension))
 
-        print(f'it join {it_joint}: {self.world_control_point_list[it_joint]}')
+        print(f"it join {it_joint}: {self.world_control_point_list[it_joint]}")
 
         for ii, control_point in enumerate(self.world_control_point_list[it_joint]):
             if not self.weights_section[it_joint][ii]:  # Zero weight
@@ -224,18 +227,17 @@ class RobotArmAvoider(RobotInterfaceNode):
 
             if self._visualizer:
                 self._visualizer.append_initial_velocity_marker(
-                    vector=init_linear_vel,
-                    position=control_point
+                    vector=init_linear_vel, position=control_point
                 )
-                
+
                 self._visualizer.append_modulated_velocity_marker(
                     vector=mod_velocity, position=control_point
                 )
-                
-                print(f'[it joint | ii] = [{it_joint} | {ii} ]')
-                print('init vel', init_linear_vel)
-                print('modu vel', mod_velocity)
-                
+
+                print(f"[it joint | ii] = [{it_joint} | {ii} ]")
+                print("init vel", init_linear_vel)
+                print("modu vel", mod_velocity)
+
             mean_vel_cps += self.weights_section[it_joint][ii] * mod_velocity
 
         for ii, control_point in enumerate(self.world_control_point_list[it_joint]):
@@ -253,7 +255,7 @@ class RobotArmAvoider(RobotInterfaceNode):
             angular_velocity=mean_omega_cps,
             reference="world",
         )
-        
+
         modulation_control = self.robot.inverse_velocity(
             mean_twist, sr.JointPositions(self.joint_state)
         )
@@ -281,8 +283,7 @@ class RobotArmAvoider(RobotInterfaceNode):
         )
 
         dir_joint = self.get_direction_of_joint_rotation(it_joint=it_joint)
-        delta_omega = np.cross(
-            twist_delta_control.get_linear_velocity(), dir_joint)
+        delta_omega = np.cross(twist_delta_control.get_linear_velocity(), dir_joint)
 
         delta_control = np.dot(delta_omega, dir_joint)
 
@@ -363,11 +364,11 @@ class RobotArmAvoider(RobotInterfaceNode):
                 self.gamma_list[-1].append(self.obstacles_publisher.get_gamma(cp))
 
     def get_relative_velocity_factors(self):
-        """ Returns the factor of the relative velocity to the obstacle. """
+        """Returns the factor of the relative velocity to the obstacle."""
         # TODO: smarter way to do this; currently it only looks at the robot velocity
         # Higher up joints have to take into account the lower ones, too
         return np.cumsum(np.abs(self.initial_control_velocities))
-    
+
     def update_influence_weights(
         self, gamma_min: float = 1, gamma_cutoff: float = 1e2
     ) -> None:
@@ -391,7 +392,7 @@ class RobotArmAvoider(RobotInterfaceNode):
             weights_base = (gamma_cutoff - gamma_min) / (gamma_array - gamma_min)
 
             max_weight = np.max(weights_base)
-            if not max_weight:    # Zero weight
+            if not max_weight:  # Zero weight
                 self.weights_section.append(np.zeros(self.section_weights.shape))
 
             weights_base *= (np.arange(weights_base.shape[0]) + 1) / weights_base.shape[
@@ -459,9 +460,9 @@ class RobotArmAvoider(RobotInterfaceNode):
         self.velocity_publisher.publish(msg)
 
 
-
 def main(args=None):
     from main_executor import StandardExecutor
+
     rclpy.init(args=args)
 
     from obstacle_publisher import Obstacle, Obstacles
@@ -477,10 +478,11 @@ def main(args=None):
         franka_publisher = FrankaRobotPublisher()
         obstacles_publisher = ObstaclePublisher(obstacles_array)
         robot_arm_avoider = RobotArmAvoider(
-            franka_publisher, obstacles_publisher,
+            franka_publisher,
+            obstacles_publisher,
             target_position=attractor_position,
-            visualize_modulation=True,    # DEBUGGING
-            )
+            visualize_modulation=True,  # DEBUGGING
+        )
 
         attractor_publisher = AttractorPublisher(attractor_position)
 
@@ -490,7 +492,7 @@ def main(args=None):
         executor.add_node(robot_arm_avoider)
 
         executor.add_node(attractor_publisher)
-        
+
         try:
             executor.spin()
         finally:

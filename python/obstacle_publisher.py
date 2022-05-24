@@ -41,12 +41,12 @@ class ObstaclePublisher(Node):
         self.obstacles_array = MarkerArray()
         self.frame_id_base = "world"
         self.i = 0
-        
+
         if obstacles_array is None:
             # Default multi-circle
             self.create_default_setup()
             self.dynamic_obstacles = True
-            
+
         else:
             self.add_obstacle(frame_id=self.frame_id_base, obstacles=obstacles_array)
             self.dynamic_obstacles = False
@@ -173,7 +173,7 @@ class ObstaclePublisher(Node):
                     # obs.pose.position.z=-sinus_value
 
             self.i += 1
-            
+
         # print(self.obstacles_array.markers)
         self.obstacles_publisher.publish(self.obstacles_array)
 
@@ -185,6 +185,7 @@ def main(args=None):
 
     minimal_publisher.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()
