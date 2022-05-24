@@ -3,7 +3,7 @@
 import rclpy
 import state_representation as sr
 import std_msgs.msg
-from dynamical_systems import create_cartesian_ds, DYNAMICAL_SYSTEM
+from dynamical_systems import create_cartesian_ds, DYNAMICAL_SYSTEM_TYPE
 from combined_approach.robot_interface_node import RobotInterfaceNode
 
 import dynamic_obstacle_avoidance as doa
@@ -12,7 +12,10 @@ import dynamic_obstacle_avoidance as doa
 class JointSpaceVelocityControl(RobotInterfaceNode):
     def __init__(self, node_name, dt):
         super().__init__(node_name, "joint_states", "velocity_controller/command")
-        robot_name = self.get_parameter("robot_name").get_parameter_value().string_value
+        
+        # robot_name = self.get_parameter("robot_name").get_parameter_value().string_value
+        robot_name = "franka"
+        
         self.init_robot_model(robot_name)
 
         target = sr.CartesianPose(
@@ -26,9 +29,9 @@ class JointSpaceVelocityControl(RobotInterfaceNode):
     def control_loop(self):
         if self.state_received and rclpy.ok():
             twist = sr.CartesianTwist(
-                # self._ds.evaluate(
-                    # self.robot.forward_kinematics(sr.JointPositions(self.joint_state))
-                # )
+                self._ds.evaluate(
+                    self.robot.forward_kinematics(sr.JointPositions(self.joint_state))
+                )
             )
             twist.clamp(0.25, 0.25)
             command = self.robot.inverse_velocity(

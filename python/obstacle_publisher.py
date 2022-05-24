@@ -28,29 +28,40 @@ class Obstacles:
 
 
 class ObstaclePublisher(Node):
-    def __init__(self):
+    def __init__(self, obstacles_array=None):
         super().__init__("obstacle_node")
-        
+
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         self.obstacles_dict = {}
         self.obstacles_publisher = self.create_publisher(MarkerArray, "/obstacles", 5)
+
+        self.obstacle_environment = ObstacleContainer()
         self.obstacles_array = MarkerArray()
         self.frame_id_base = "world"
         self.i = 0
+        
+        if obstacles_array is None:
+            # Default multi-circle
+            self.create_default_setup()
+            self.dynamic_obstacles = True
+            
+        else:
+            self.add_obstacle(frame_id=self.frame_id_base, obstacles=obstacles_array)
+            self.dynamic_obstacles = False
 
-        self.obstacle_environment = ObstacleContainer()
-
+    def create_default_setup(self):
         spheres = Obstacles(
-            [Obstacle([0.0, 0.5, 0.0], 0.3),
-             Obstacle([0.58, 0.0, 0.63], 0.10),  # horizontal static ee crash
-             Obstacle([0.3, -0.5, 0.0], 0.3)], 
+            [
+                Obstacle([0.0, 0.5, 0.0], 0.3),
+                Obstacle([0.58, 0.0, 0.63], 0.10),  # horizontal static ee crash
+                Obstacle([0.3, -0.5, 0.0], 0.3),
+            ],
             obstacle_type=Marker.SPHERE,
         )
 
         self.add_obstacle(frame_id=self.frame_id_base, obstacles=spheres)
-
 
         cubes = Obstacles(
             [
@@ -97,8 +108,6 @@ class ObstaclePublisher(Node):
             self.marker_object.color.g = 0.439215686
             self.marker_object.color.b = 0.278431373
 
-
-
             # This has to be, otherwise it will be transparent
             self.marker_object.color.a = 1.0
 
@@ -106,29 +115,35 @@ class ObstaclePublisher(Node):
 
             # ~~~~~~~~~~~~ Now for the Avoider Environment
 
-
-            if(self.marker_object.type == Marker.SPHERE):
+            if self.marker_object.type == Marker.SPHERE:
                 self.obstacle_environment.append(
-
                     Ellipse(
-                        axes_length=[obs.radius_length, obs.radius_length,obs.radius_length],
+                        axes_length=[
+                            obs.radius_length,
+                            obs.radius_length,
+                            obs.radius_length,
+                        ],
                         center_position=np.array(obs.position),
                         linear_velocity=np.zeros(3),
                         margin_absolut=0,
                         tail_effect=False,
-                        repulsion_coeff=1.4,
+                        # repulsion_coeff=1.4,
                     )
                 )
 
-            elif(self.marker_object.type == Marker.CUBE):
+            elif self.marker_object.type == Marker.CUBE:
                 self.obstacle_environment.append(
                     Cuboid(
-                        axes_length=[obs.radius_length, obs.radius_length,obs.radius_length],
+                        axes_length=[
+                            obs.radius_length,
+                            obs.radius_length,
+                            obs.radius_length,
+                        ],
                         center_position=np.array(obs.position),
                         linear_velocity=np.zeros(3),
                         margin_absolut=0,
                         tail_effect=False,
-                        repulsion_coeff=1.4,
+                        # repulsion_coeff=1.4,
                     )
                 )
 
@@ -141,24 +156,26 @@ class ObstaclePublisher(Node):
 
     def timer_callback(self):
         # logging.info("[OBSTACLE_PUBLISHER] Timer callback.")
-        sinus_value = math.sin(self.i / 10) / 2
-        j = 1
-        for ii, obs in enumerate(self.obstacles_array.markers):
 
-            if obs.type == Marker.SPHERE:
-                if not ii % 2:
-                    obs.pose.position.z = sinus_value *j + 0.5 + 0.12
-                    j *= -1
-                else:
-                    obs.pose.position.y = sinus_value *j 
-            elif obs.type == Marker.CUBE:
-                pass
-                # obs.pose.position.z=-sinus_value
+        if self.dynamic_obstacles:
+            sinus_value = math.sin(self.i / 10) / 2
+            j = 1
 
-        self.obstacles_publisher.publish(self.obstacles_array)
-        self.i += 1
+            for ii, obs in enumerate(self.obstacles_array.markers):
+                if obs.type == Marker.SPHERE:
+                    if not ii % 2:
+                        obs.pose.position.z = sinus_value * j + 0.5 + 0.12
+                        j *= -1
+                    else:
+                        obs.pose.position.y = sinus_value * j
+                elif obs.type == Marker.CUBE:
+                    pass
+                    # obs.pose.position.z=-sinus_value
 
+            self.i += 1
+            
         # print(self.obstacles_array.markers)
+        self.obstacles_publisher.publish(self.obstacles_array)
 
 
 def main(args=None):
@@ -168,7 +185,6 @@ def main(args=None):
 
     minimal_publisher.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == "__main__":
     main()

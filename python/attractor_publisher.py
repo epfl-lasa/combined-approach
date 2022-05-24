@@ -8,18 +8,19 @@ import numpy as np
 from rclpy.node import Node
 from visualization_msgs.msg import Marker
 
+
 class AttractorPublisher(Node):
-    def __init__(self,pos):
-        super().__init__("pose_node")
-        
+    def __init__(self, pos):
+        super().__init__("attractor_node")
+
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        self.attractor_publisher = self.create_publisher(Marker , "/attractor",5)
+        self.attractor_publisher = self.create_publisher(Marker, "/attractor", 5)
         self.attractor_object = Marker()
         self.frame_id = "world"
 
-        self.attractor_object.header.frame_id=self.frame_id
+        self.attractor_object.header.frame_id = self.frame_id
 
         self.attractor_pos = pos
         self.attractor_object.type = Marker.CUBE
@@ -41,7 +42,6 @@ class AttractorPublisher(Node):
         self.attractor_object.scale.x = self.cube_length
         self.attractor_object.scale.y = self.cube_length
         self.attractor_object.scale.z = self.cube_length
-        
 
         self.attractor_object.color.r = 0.913
         self.attractor_object.color.g = 0.117
@@ -50,16 +50,9 @@ class AttractorPublisher(Node):
         # This has to be, otherwise it will be transparent
         self.attractor_object.color.a = 1.0
 
-        
-
-        
-
-        
-        
     def timer_callback(self):
-        print("5. Attractor ")
+        # print("5. Attractor ")
         self.attractor_publisher.publish(self.attractor_object)
-
 
 
 def main(args=None):
