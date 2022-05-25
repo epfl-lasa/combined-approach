@@ -128,11 +128,10 @@ class RobotArmAvoider(RobotInterfaceNode):
         return self.link_trunk_array.shape[1]
 
     def update_robot_kinematics(self) -> None:
-        print('joint pos', self.joint_state.get_positions())
+        print("joint pos", self.joint_state.get_positions())
         # breakpoint()
         pass
-        
-        
+
     def timer_callback(self) -> None:
         """The joint-control velocities in an ascending order (starting from the base)"""
 
@@ -175,7 +174,7 @@ class RobotArmAvoider(RobotInterfaceNode):
 
         if self._visualizer:
             self._visualizer.publish_velocities()
-        
+
     def update_initial_control(self):
         self.ee_twist = self.get_ds_at_endeffector()
 
@@ -317,12 +316,12 @@ class RobotArmAvoider(RobotInterfaceNode):
         twist = sr.CartesianTwist(self._ds.evaluate(ee_state))
         twist.clamp(self.max_linear_velocity, 0.25)
 
-        print('ee_stat', ee_state)
+        print("ee_stat", ee_state)
         breakpoint()
         # velocity = twist.get_linear_velocity()
         # velocity = self._modulator.avoid(ee_state.get_position(), velocity=velocity)
         # twist.set_linear_velocity(velocity)
-        
+
         return twist
 
     def update_control_points(self):
@@ -380,7 +379,10 @@ class RobotArmAvoider(RobotInterfaceNode):
         return np.cumsum(np.abs(self.initial_control_velocities))
 
     def update_influence_weights(
-        self, gamma_min: float = 1, gamma_cutoff: float = 1e2, weight_factor: float = 5e-4
+        self,
+        gamma_min: float = 1,
+        gamma_cutoff: float = 1e2,
+        weight_factor: float = 5e-4,
     ) -> None:
         self.link_factor = 1
 
@@ -423,7 +425,6 @@ class RobotArmAvoider(RobotInterfaceNode):
         if weight_sum:
             self.weights_link = self.weights_link / weight_sum
 
-
     def initialize_urdf_from_parameterserver_with_pinocchio(self):
         # => this is currently not used anymore
         self.client = self.create_client(
@@ -452,7 +453,7 @@ class RobotArmAvoider(RobotInterfaceNode):
         self.velocity_publisher.publish(msg)
 
     def destroy_node(self):
-        """ Send zero-control command before destroying the node."""
+        """Send zero-control command before destroying the node."""
         msg = Float64MultiArray()
         msg.data = [0.0 for _ in range(self.n_links)]
         self.velocity_publisher.publish(msg)

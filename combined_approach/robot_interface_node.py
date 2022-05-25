@@ -20,23 +20,30 @@ class RobotInterfaceNode(Node):
         self._subscription = None
 
     def init_robot_model(self, name):
-        client = self.create_client(GetParameters, "/" + name + "/robot_state_publisher/get_parameters")
+        client = self.create_client(
+            GetParameters, "/" + name + "/robot_state_publisher/get_parameters"
+        )
         while not client.wait_for_service(1):
             if not rclpy.ok():
-                self.get_logger().error("Interrupted while waiting for the service. Exiting.")
+                self.get_logger().error(
+                    "Interrupted while waiting for the service. Exiting."
+                )
                 rclpy.shutdown()
             self.get_logger().info("Service not available, waiting again...")
         request = GetParameters.Request()
-        request.names = ['robot_description']
+        request.names = ["robot_description"]
         future = client.call_async(request)
         rclpy.spin_until_future_complete(self, future)
         robot_description = future.result().values[0].string_value
         urdf_path = "/tmp/" + name + ".urdf"
         create_urdf_from_string(robot_description, urdf_path)
         self.robot = Model(name, urdf_path)
-        self.joint_state = JointState(self.robot.get_robot_name(), self.robot.get_joint_frames())
-        self._subscription = self.create_subscription(JointStateMsg, self._subscription_topic,
-                                                      self._robot_state_callback, 10)
+        self.joint_state = JointState(
+            self.robot.get_robot_name(), self.robot.get_joint_frames()
+        )
+        self._subscription = self.create_subscription(
+            JointStateMsg, self._subscription_topic, self._robot_state_callback, 10
+        )
 
     def _robot_state_callback(self, msg):
         if not self.state_received:
