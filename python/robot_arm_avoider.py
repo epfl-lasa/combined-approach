@@ -79,10 +79,10 @@ class RobotArmAvoider(RobotInterfaceNode):
         target.set_orientation(target_orientation)
         self._ds = create_cartesian_ds(DYNAMICAL_SYSTEM_TYPE.POINT_ATTRACTOR)
 
-        self._ds = create_cartesian_ds(DYNAMICAL_SYSTEM_TYPE.POINT_ATTRACTOR)
         self._ds.set_parameter_value(
             "attractor", target, sr.ParameterType.STATE, sr.StateType.CARTESIAN_POSE
         )
+
         self._ds.set_parameter_value(
             "gain", [50, 50, 50, 10, 10, 10], sr.ParameterType.DOUBLE_ARRAY
         )
@@ -161,15 +161,17 @@ class RobotArmAvoider(RobotInterfaceNode):
             self.update_correction_control(it_joint)
             self.update_modulation_control(it_joint)
 
+        breakpoint()
         self.publish_final_control_velocity()
         # print('publish', self.final_control_velocities)
 
         if self._visualizer:
             self._visualizer.publish_velocities()
-
+        
     def update_initial_control(self):
         self.ee_twist = self.get_modulated_ds_at_endeffector()
 
+        # breakpoint()
         logging.info("Got the first twist.")
         initial_control = self.robot.inverse_velocity(
             self.ee_twist, sr.JointPositions(self.joint_state)
@@ -223,7 +225,6 @@ class RobotArmAvoider(RobotInterfaceNode):
             mod_velocity = self._modulator.avoid(
                 control_point, velocity=init_linear_vel
             )
-            breakpoint()
 
             if self._visualizer:
                 self._visualizer.append_initial_velocity_marker(
@@ -309,10 +310,10 @@ class RobotArmAvoider(RobotInterfaceNode):
         twist = sr.CartesianTwist(self._ds.evaluate(ee_state))
         twist.clamp(self.max_linear_velocity, 0.25)
 
-        velocity = twist.get_linear_velocity()
-        velocity = self._modulator.avoid(ee_state.get_position(), velocity=velocity)
-
-        twist.set_linear_velocity(velocity)
+        # velocity = twist.get_linear_velocity()
+        # velocity = self._modulator.avoid(ee_state.get_position(), velocity=velocity)
+        # twist.set_linear_velocity(velocity)
+        
         return twist
 
     def update_control_points(self):
@@ -363,14 +364,14 @@ class RobotArmAvoider(RobotInterfaceNode):
             for cp in cp_list:
                 self.gamma_list[-1].append(self.obstacles_publisher.get_gamma(cp))
 
-    def get_relative_velocity_factors(self):
+    def get_relative_velocity_factors(self) -> np.array:
         """Returns the factor of the relative velocity to the obstacle."""
         # TODO: smarter way to do this; currently it only looks at the robot velocity
         # Higher up joints have to take into account the lower ones, too
         return np.cumsum(np.abs(self.initial_control_velocities))
 
     def update_influence_weights(
-        self, gamma_min: float = 1, gamma_cutoff: float = 1e2
+        self, gamma_min: float = 1, gamma_cutoff: float = 1e2, weight_factor: float = 5e-4
     ) -> None:
         self.link_factor = 1
 
@@ -390,6 +391,7 @@ class RobotArmAvoider(RobotInterfaceNode):
                 continue
 
             weights_base = (gamma_cutoff - gamma_min) / (gamma_array - gamma_min)
+            weights_base *= weight_factor
 
             max_weight = np.max(weights_base)
             if not max_weight:  # Zero weight
@@ -414,7 +416,8 @@ class RobotArmAvoider(RobotInterfaceNode):
 
     def publish_final_control_velocity(self):
         msg = Float64MultiArray()
-        msg.data = self.final_control_velocities.tolist()
+        # msg.data = self.final_control_velocities.tolist()
+        msg.data = self.initial_control_velocities.tolist()
         self.velocity_publisher.publish(msg)
 
     def stop(self):

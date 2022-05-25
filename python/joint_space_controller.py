@@ -21,6 +21,7 @@ class JointSpaceVelocityControl(RobotInterfaceNode):
         target = sr.CartesianPose(
             self.robot.get_frames()[-1], self.robot.get_frames()[0]
         )
+        
         target.set_position([0.6, +0.3, 0.5])
         target.set_orientation([0, 1, 0, 0])
 
