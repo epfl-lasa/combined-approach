@@ -43,7 +43,6 @@ class FrankaRobotPublisher(Node):
         )
         # self.subscription  # prevent unused variable warning
 
-
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
@@ -62,57 +61,43 @@ class FrankaRobotPublisher(Node):
         self.frame_id_base = "_frankalink"
 
         link_0 = RigidLink(
-            [
-                ControlPoint([0.0, 0.0, 0.08], self.cp_radius)
-            ],
+            [ControlPoint([0.0, 0.0, 0.08], self.cp_radius)],
             link_id=0,
         )
         self.add_link(frame_id=self.frame_id_base + str(link_0.link_id), link=link_0)
 
         link_1 = RigidLink(
-            [
-                ControlPoint([0.0, -0.035, -0.1], self.cp_radius)
-            ],
+            [ControlPoint([0.0, -0.035, -0.1], self.cp_radius)],
             link_id=1,
         )
         self.add_link(frame_id=self.frame_id_base + str(link_1.link_id), link=link_1)
 
         link_2 = RigidLink(
-            [
-                ControlPoint([0.0, -0.074, 0.03], self.cp_radius)
-            ],
+            [ControlPoint([0.0, -0.074, 0.03], self.cp_radius)],
             link_id=2,
         )
         self.add_link(frame_id=self.frame_id_base + str(link_2.link_id), link=link_2)
 
         link_3 = RigidLink(
-            [
-                ControlPoint([0.05, 0.03, -0.02], self.cp_radius)
-            ],
+            [ControlPoint([0.05, 0.03, -0.02], self.cp_radius)],
             link_id=3,
         )
         self.add_link(frame_id=self.frame_id_base + str(link_3.link_id), link=link_3)
 
         link_4 = RigidLink(
-            [
-                ControlPoint([-0.07, 0.03, 0.02], self.cp_radius)
-            ],
+            [ControlPoint([-0.07, 0.03, 0.02], self.cp_radius)],
             link_id=4,
         )
         self.add_link(frame_id=self.frame_id_base + str(link_4.link_id), link=link_4)
 
         link_5 = RigidLink(
-            [
-                ControlPoint([0.0, 0.10, -0.08], self.cp_radius)
-            ],
+            [ControlPoint([0.0, 0.10, -0.08], self.cp_radius)],
             link_id=5,
         )
         self.add_link(frame_id=self.frame_id_base + str(link_5.link_id), link=link_5)
 
         link_6 = RigidLink(
-            [
-                ControlPoint([0.04, 0.0, 0.01], self.cp_radius)
-            ],
+            [ControlPoint([0.04, 0.0, 0.01], self.cp_radius)],
             link_id=6,
         )
         self.add_link(frame_id=self.frame_id_base + str(link_6.link_id), link=link_6)
@@ -122,7 +107,6 @@ class FrankaRobotPublisher(Node):
 
         # link_8 = RigidLink([ControlPoint([0.0, 0.0, 0.0], 0.1)], link_id=8)
         # self.add_link(frame_id=self.frame_id_base + str(link_8.link_id), link=link_8)
-
 
     def add_link(self, frame_id, link: RigidLink):
 
@@ -165,28 +149,26 @@ class FrankaRobotPublisher(Node):
         try:
             now = rclpy.time.Time()
             # now = self.get_clock().now().to_msg()
-            
+
             dur = Duration()
             dur.sec = 1
             dur.nsec = 0
-            
-            trans = self.tf_buffer.lookup_transform(
-                to_frame_rel, from_frame_rel, now
-            )
+
+            trans = self.tf_buffer.lookup_transform(to_frame_rel, from_frame_rel, now)
             # print(now)
             # print(trans.header.frame_id)
             # breakpoint()
             return trans
-        
+
         except TransformException as ex:
             self.get_logger().info(
                 f"Could not transform {to_frame_rel} to {from_frame_rel}: {ex}"
             )
             return None
-                
+
     def get_end_effector_position(self):
         ee_trans = self.get_transformation("_frankalink8", "world")
-        
+
         if ee_trans is None:
             return None
 
@@ -204,30 +186,27 @@ class FrankaRobotPublisher(Node):
         # self.msg_jointstate.pose
         # how do I make the whole system change to a specific position based on where I want the end effector to be
 
-        
-
-
     def callback_jointstate(self, msg):
         self.msg_jointstate = msg
+
     #     # print("callback_jointstate")
     #     # print('header', msg.header.stamp)
     #     # print(self.get_clock().now().to_msg())
-        
+
     #     # self.joint_positions = msg.position
     #     # self.joint_velocity = msg.velocity
     #     # self.joint_effort = msg.effort
-                
+
     def timer_callback(self):
         print("1. CONTROL POINTS")
         self.control_publisher.publish(self.control_point_array)
         # self.get_end_effector_position()
 
-
         self._done = True
 
     def spin_short(self):
         self._done = False
-        rclpy.spin_until_future_complete(self,self)
+        rclpy.spin_until_future_complete(self, self)
 
     def done(self):
         return self._done
@@ -244,4 +223,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
- 

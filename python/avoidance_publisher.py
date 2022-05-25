@@ -23,36 +23,33 @@ class AvoidancePublisher(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         self.initial_dynamics = LinearSystem(
-        attractor_position=np.array([0.0, 0.0, 0.0]),
-        maximum_velocity=1,
-        distance_decrease=0.3,
+            attractor_position=np.array([0.0, 0.0, 0.0]),
+            maximum_velocity=1,
+            distance_decrease=0.3,
         )
 
-        # start_ee_pos = [0.5819279740349097, -0.0038269086217280106, 0.6485108332864515]
-        # start_ee_pos = [0.26891330965025634, -0.30426033544813147, 1.022167526752325]
-        # self.franka.set_end_effector_position(start_ee_pos)
+        print("before get transformation")
+        franka.get_transformation("_frankalink8", "world")
 
-    def update_step (self, ii):
+    def update_step(self, ii):
         if not ii % 10:
             print(f"it={ii}")
 
         # iterate over ii to just use the pos of the ee
-        velocity = self.dynamic_avoider.evaluate(self.position_list[:,ii-1])
-        
+        velocity = self.dynamic_avoider.evaluate(self.position_list[:, ii - 1])
 
     def has_converged(self, ii) -> bool:
-        return np.allclose(self.position_list[:,ii],self.position_list[:,ii-1])
-
+        return np.allclose(self.position_list[:, ii], self.position_list[:, ii - 1])
 
     def timer_callback(self):
         print("3. AVOIDANCE")
-        # ee_pos = self.franka.get_end_effector_position()
+        ee_pos = self.franka.get_end_effector_position()
         # print(ee_pos)
 
         # obstacles = self.obstacles_publisher.get_obstacles()
         # print(obstacles)
 
-        
+
 def main(args=None):
     rclpy.init(args=args)
     avoidance = AvoidancePublisher()

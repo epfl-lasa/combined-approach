@@ -43,7 +43,6 @@ class FrankaRobotPublisher(Node):
         )
         # self.subscription  # prevent unused variable warning
 
-
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
@@ -121,7 +120,6 @@ class FrankaRobotPublisher(Node):
         link_8 = RigidLink([ControlPoint([0.0, 0.0, 0.0], 0.1)], link_id=8)
         self.add_link(frame_id=self.frame_id_base + str(link_8.link_id), link=link_8)
 
-
     def add_link(self, frame_id, link: RigidLink):
 
         self.link_dict[frame_id] = link
@@ -163,28 +161,26 @@ class FrankaRobotPublisher(Node):
         try:
             now = rclpy.time.Time()
             # now = self.get_clock().now().to_msg()
-            
+
             dur = Duration()
             dur.sec = 1
             dur.nsec = 0
-            
-            trans = self.tf_buffer.lookup_transform(
-                to_frame_rel, from_frame_rel, now
-            )
-            # print(now)
+
+            trans = self.tf_buffer.lookup_transform(to_frame_rel, from_frame_rel, now)
+            print(now)
             # print(trans.header.frame_id)
             # breakpoint()
             return trans
-        
+
         except TransformException as ex:
             self.get_logger().info(
                 f"Could not transform {to_frame_rel} to {from_frame_rel}: {ex}"
             )
             return None
-                
+
     def get_end_effector_position(self):
         ee_trans = self.get_transformation("_frankalink8", "world")
-        
+
         if ee_trans is None:
             return None
 
@@ -202,30 +198,27 @@ class FrankaRobotPublisher(Node):
         # self.msg_jointstate.pose
         # how do I make the whole system change to a specific position based on where I want the end effector to be
 
-        
-
-
     def callback_jointstate(self, msg):
         self.msg_jointstate = msg
+
     #     # print("callback_jointstate")
     #     # print('header', msg.header.stamp)
     #     # print(self.get_clock().now().to_msg())
-        
-    #     # self.joint_positions = msg.position
-    #     # self.joint_velocity = msg.velocity
-    #     # self.joint_effort = msg.effort
-                
+
+    # self.joint_positions = msg.position
+    # self.joint_velocity = msg.velocity
+    # self.joint_effort = msg.effort
+
     def timer_callback(self):
         print("1. CONTROL POINTS")
         self.control_publisher.publish(self.control_point_array)
         # self.get_end_effector_position()
 
-
         self._done = True
 
     def spin_short(self):
         self._done = False
-        rclpy.spin_until_future_complete(self,self)
+        rclpy.spin_until_future_complete(self, self)
 
     def done(self):
         return self._done
@@ -242,4 +235,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
- 

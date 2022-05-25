@@ -10,19 +10,19 @@ from std_msgs.msg import String
 
 # from franka_robot_publisher import FrankaRobotPublisher
 from franka_robot_publisher_small_CP import FrankaRobotPublisher
+
 # from franka_robot_publisher_1CP import FrankaRobotPublisher
 # from franka_robot_publisher_1CP_large import FrankaRobotPublisher
 from obstacle_publisher import ObstaclePublisher
 from avoidance_publisher import AvoidancePublisher
+
 # from pose_publisher import PosePublisher
 
 from wrench_publisher import WrenchPublisher
 from attractor_publisher import AttractorPublisher
 
 
-
 class PriorityExecutor(Executor):
-    
     def __init__(self):
         super().__init__()
         # self.high_priority_nodes = set()
@@ -32,25 +32,26 @@ class PriorityExecutor(Executor):
 
     def spin_once(self, timeout_sec=None):
         try:
-            handler, group, node = self.wait_for_ready_callbacks(timeout_sec=timeout_sec)
+            handler, group, node = self.wait_for_ready_callbacks(
+                timeout_sec=timeout_sec
+            )
         except StopIteration:
             pass
         else:
-            
+
             self.executor.submit(handler)
-            
 
 
 def main(args=None):
     rclpy.init(args=args)
     try:
+        attractor_position = [0.5, 0.0, 0.5]
         franka_publisher = FrankaRobotPublisher()
         obstacles_publisher = ObstaclePublisher()
         avoidance_publisher = AvoidancePublisher(franka_publisher, obstacles_publisher)
         # pose_publisher = PosePublisher()
-        wrench_publisher = WrenchPublisher()
-        attractor_publisher = AttractorPublisher([0.5,0.0,0.5])
-
+        attractor_publisher = AttractorPublisher(attractor_position)
+        wrench_publisher = WrenchPublisher(attractor_position, franka_publisher)
 
         executor = PriorityExecutor()
         executor.add_node(franka_publisher)
@@ -64,7 +65,7 @@ def main(args=None):
             executor.spin()
         finally:
             executor.shutdown()
-            
+
             franka_publisher.destroy_node()
             obstacles_publisher.destroy_node()
             avoidance_publisher.destroy_node()
@@ -75,5 +76,5 @@ def main(args=None):
         rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

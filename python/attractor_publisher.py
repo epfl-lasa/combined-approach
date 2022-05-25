@@ -6,20 +6,29 @@ import math
 import numpy as np
 
 from rclpy.node import Node
+from rclpy.duration import Duration
 from visualization_msgs.msg import Marker
 
+from tf2_ros import TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+
+
 class AttractorPublisher(Node):
-    def __init__(self,pos):
+    def __init__(self, pos):
         super().__init__("pose_node")
-        
+
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        self.attractor_publisher = self.create_publisher(Marker , "/attractor",5)
+        self.attractor_publisher = self.create_publisher(Marker, "/attractor", 5)
         self.attractor_object = Marker()
         self.frame_id = "world"
 
-        self.attractor_object.header.frame_id=self.frame_id
+        self.attractor_object.header.frame_id = self.frame_id
+
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         self.attractor_pos = pos
         self.attractor_object.type = Marker.CUBE
@@ -33,7 +42,7 @@ class AttractorPublisher(Node):
         # self.attractor_object.pose.orientation.w = 0.733
 
         self.attractor_object.pose.orientation.x = 0.5
-        self.attractor_object.pose.orientation.y = 0.7
+        self.attractor_object.pose.orientation.y = 0.5
         self.attractor_object.pose.orientation.z = 0.5
         self.attractor_object.pose.orientation.w = 0.5
 
@@ -41,7 +50,6 @@ class AttractorPublisher(Node):
         self.attractor_object.scale.x = self.cube_length
         self.attractor_object.scale.y = self.cube_length
         self.attractor_object.scale.z = self.cube_length
-        
 
         self.attractor_object.color.r = 0.913
         self.attractor_object.color.g = 0.117
@@ -50,16 +58,28 @@ class AttractorPublisher(Node):
         # This has to be, otherwise it will be transparent
         self.attractor_object.color.a = 1.0
 
-        
+    def get_transformation(self, from_frame_rel, to_frame_rel):
+        print("Attractor Transformation")
+        pass
+        # try:
+        #     now = rclpy.time.Time()
+        #     # now = self.get_clock().now().to_msg()
 
-        
+        #     trans = self.tf_buffer.lookup_transform(
+        #         to_frame_rel,
+        #         from_frame_rel,
+        #         now)
+        #     return trans
 
-        
-        
+        # except TransformException as ex:
+        #     self.get_logger().info(
+        #         f"Could not transform {to_frame_rel} to {from_frame_rel}: {ex}"
+        #     )
+        #     return None
+
     def timer_callback(self):
         print("5. Attractor ")
         self.attractor_publisher.publish(self.attractor_object)
-
 
 
 def main(args=None):

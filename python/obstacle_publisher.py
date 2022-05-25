@@ -45,20 +45,18 @@ class ObstaclePublisher(Node):
         self.frame_id_base = "world"
         self.i = 0
 
-
         self.obstacle_environment = ObstacleContainer()
-        
-
 
         spheres = Obstacles(
-            [Obstacle([0.0, 0.5, 0.0], 0.3),
-             Obstacle([0.58, 0.0, 0.63], 0.10),  # horizontal static ee crash
-             Obstacle([0.3, -0.5, 0.0], 0.3)], 
+            [
+                Obstacle([0.0, 0.5, 0.0], 0.3),
+                Obstacle([0.58, 0.0, 0.63], 0.10),  # horizontal static ee crash
+                Obstacle([0.3, -0.5, 0.0], 0.3),
+            ],
             obstacle_type=Marker.SPHERE,
         )
 
         self.add_obstacle(frame_id=self.frame_id_base, obstacles=spheres)
-
 
         cubes = Obstacles(
             [
@@ -105,8 +103,6 @@ class ObstaclePublisher(Node):
             self.marker_object.color.g = 0.439215686
             self.marker_object.color.b = 0.278431373
 
-
-
             # This has to be, otherwise it will be transparent
             self.marker_object.color.a = 1.0
 
@@ -114,12 +110,14 @@ class ObstaclePublisher(Node):
 
             # ~~~~~~~~~~~~ Now for the Avoider Environment
 
-
-            if(self.marker_object.type == Marker.SPHERE):
+            if self.marker_object.type == Marker.SPHERE:
                 self.obstacle_environment.append(
-
                     Ellipse(
-                        axes_length=[obs.radius_length, obs.radius_length,obs.radius_length],
+                        axes_length=[
+                            obs.radius_length,
+                            obs.radius_length,
+                            obs.radius_length,
+                        ],
                         center_position=np.array(obs.position),
                         margin_absolut=0,
                         tail_effect=False,
@@ -127,10 +125,14 @@ class ObstaclePublisher(Node):
                     )
                 )
 
-            elif(self.marker_object.type == Marker.CUBE):
+            elif self.marker_object.type == Marker.CUBE:
                 self.obstacle_environment.append(
                     Cuboid(
-                        axes_length=[obs.radius_length, obs.radius_length,obs.radius_length],
+                        axes_length=[
+                            obs.radius_length,
+                            obs.radius_length,
+                            obs.radius_length,
+                        ],
                         center_position=np.array(obs.position),
                         margin_absolut=0,
                         tail_effect=False,
@@ -150,10 +152,10 @@ class ObstaclePublisher(Node):
 
             if obs.type == Marker.SPHERE:
                 if not ii % 2:
-                    obs.pose.position.z = sinus_value *j + 0.5 + 0.12
+                    obs.pose.position.z = sinus_value * j + 0.5 + 0.12
                     j *= -1
                 else:
-                    obs.pose.position.y = sinus_value *j 
+                    obs.pose.position.y = sinus_value * j
             elif obs.type == Marker.CUBE:
                 pass
                 # obs.pose.position.z=-sinus_value
