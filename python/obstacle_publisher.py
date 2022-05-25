@@ -156,7 +156,6 @@ class ObstaclePublisher(Node):
 
     def timer_callback(self):
         # logging.info("[OBSTACLE_PUBLISHER] Timer callback.")
-
         if self.dynamic_obstacles:
             sinus_value = math.sin(self.i / 10) / 2
             j = 1

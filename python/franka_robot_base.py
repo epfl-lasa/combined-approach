@@ -159,7 +159,7 @@ class FrankaRobotBase(Node):
             ee_trans.transform.translation.z,
         ]
 
-        return ee_pos
+        return np.array(ee_pos)
 
     def set_end_effector_position(self, position):
         pass

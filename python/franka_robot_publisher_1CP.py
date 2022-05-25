@@ -14,10 +14,10 @@ from geometry_msgs.msg import Point, TransformStamped
 from std_msgs.msg import String
 from visualization_msgs.msg import Marker, MarkerArray
 
-from franka_robot_base import FankaRobotBase, RigidLink, ControlPoint
+from franka_robot_base import FrankaRobotBase, RigidLink, ControlPoint
 
 
-class FrankaRobotPublisher(FankaRobotBase):
+class FrankaRobotPublisher(FrankaRobotBase):
     def initialize_control_point(self):
         self.link_dict = {}
         self.control_publisher = self.create_publisher(

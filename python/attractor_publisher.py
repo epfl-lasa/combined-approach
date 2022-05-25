@@ -6,6 +6,7 @@ import math
 import numpy as np
 
 from rclpy.node import Node
+from rclpy.duration import Duration
 from visualization_msgs.msg import Marker
 
 
@@ -34,7 +35,7 @@ class AttractorPublisher(Node):
         # self.attractor_object.pose.orientation.w = 0.733
 
         self.attractor_object.pose.orientation.x = 0.5
-        self.attractor_object.pose.orientation.y = 0.7
+        self.attractor_object.pose.orientation.y = 0.5
         self.attractor_object.pose.orientation.z = 0.5
         self.attractor_object.pose.orientation.w = 0.5
 
