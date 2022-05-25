@@ -28,20 +28,30 @@ class Obstacles:
 
 
 class ObstaclePublisher(Node):
-    def __init__(self):
+    def __init__(self, obstacles_array=None):
         super().__init__("obstacle_node")
-        
+
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         self.obstacles_dict = {}
         self.obstacles_publisher = self.create_publisher(MarkerArray, "/obstacles", 5)
+
+        self.obstacle_environment = ObstacleContainer()
         self.obstacles_array = MarkerArray()
         self.frame_id_base = "world"
         self.i = 0
 
-        self.obstacle_environment = ObstacleContainer()
+        if obstacles_array is None:
+            # Default multi-circle
+            self.create_default_setup()
+            self.dynamic_obstacles = True
 
+        else:
+            self.add_obstacle(frame_id=self.frame_id_base, obstacles=obstacles_array)
+            self.dynamic_obstacles = False
+
+    def create_default_setup(self):
         spheres = Obstacles(
             [
                 Obstacle([0.0, 0.5, 0.0], 0.3),
@@ -117,7 +127,7 @@ class ObstaclePublisher(Node):
                         linear_velocity=np.zeros(3),
                         margin_absolut=0,
                         tail_effect=False,
-                        repulsion_coeff=1.4,
+                        # repulsion_coeff=1.4,
                     )
                 )
 
@@ -133,7 +143,7 @@ class ObstaclePublisher(Node):
                         linear_velocity=np.zeros(3),
                         margin_absolut=0,
                         tail_effect=False,
-                        repulsion_coeff=1.4,
+                        # repulsion_coeff=1.4,
                     )
                 )
 
@@ -146,24 +156,25 @@ class ObstaclePublisher(Node):
 
     def timer_callback(self):
         # logging.info("[OBSTACLE_PUBLISHER] Timer callback.")
-        sinus_value = math.sin(self.i / 10) / 2
-        j = 1
-        for ii, obs in enumerate(self.obstacles_array.markers):
+        if self.dynamic_obstacles:
+            sinus_value = math.sin(self.i / 10) / 2
+            j = 1
 
-            if obs.type == Marker.SPHERE:
-                if not ii % 2:
-                    obs.pose.position.z = sinus_value * j + 0.5 + 0.12
-                    j *= -1
-                else:
-                    obs.pose.position.y = sinus_value * j
-            elif obs.type == Marker.CUBE:
-                pass
-                # obs.pose.position.z=-sinus_value
+            for ii, obs in enumerate(self.obstacles_array.markers):
+                if obs.type == Marker.SPHERE:
+                    if not ii % 2:
+                        obs.pose.position.z = sinus_value * j + 0.5 + 0.12
+                        j *= -1
+                    else:
+                        obs.pose.position.y = sinus_value * j
+                elif obs.type == Marker.CUBE:
+                    pass
+                    # obs.pose.position.z=-sinus_value
 
-        self.obstacles_publisher.publish(self.obstacles_array)
-        self.i += 1
+            self.i += 1
 
         # print(self.obstacles_array.markers)
+        self.obstacles_publisher.publish(self.obstacles_array)
 
 
 def main(args=None):

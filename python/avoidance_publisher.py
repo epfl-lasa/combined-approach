@@ -12,7 +12,7 @@ from vartools.dynamical_systems import LinearSystem
 
 
 class AvoidancePublisher(Node):
-# Helper class
+    # Helper class
     def __init__(self, franka, obstacles_publisher):
         super().__init__("obstace_avoidance")
         self.franka = franka

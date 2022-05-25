@@ -11,6 +11,12 @@ https://github.com/epfl-lasa/simulator-backend/tree/develop/pybullet_ros2
 aica-docker interactive aica-technology/ros2-simulator:galactic -u ros2 --net host --no-hostname --ros-domain-id 0
 ```
 
+with shared rviz-config-folder
+
+``` bash
+aica-docker interactive aica-technology/ros2-simulator:galactic -u ros2 --net host --no-hostname --ros-domain-id 0 -v /home/lukas/Code/simulator-backend/pybullet_ros2/pybullet_ros2/config:/home/ros2/ros2_ws/install/pybullet_ros2/share/pybullet_ros2/config:rw
+```
+
 ``` bash
 ros2 launch pybullet_ros2 franka.launch.py
 ```
