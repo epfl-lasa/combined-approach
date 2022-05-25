@@ -1,20 +1,16 @@
 #!/usr/bin/python3
-#!python
-
-import rclpy
+import logging
 import math
+
 import numpy as np
 
+import rclpy
 from rclpy.node import Node
-
-
-# from dynamic_obstacle_avoidance.obstacles import Polygon, Cuboid, Ellipse
-from dynamic_obstacle_avoidance.containers import ObstacleContainer
-
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point
 from std_msgs.msg import String
 
+from dynamic_obstacle_avoidance.containers import ObstacleContainer
 from dynamic_obstacle_avoidance.obstacles import EllipseWithAxes as Ellipse
 from dynamic_obstacle_avoidance.obstacles import CuboidXd as Cuboid
 
@@ -34,8 +30,7 @@ class Obstacles:
 class ObstaclePublisher(Node):
     def __init__(self):
         super().__init__("obstacle_node")
-        print("obstalce init")
-
+        
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
@@ -119,6 +114,7 @@ class ObstaclePublisher(Node):
                             obs.radius_length,
                         ],
                         center_position=np.array(obs.position),
+                        linear_velocity=np.zeros(3),
                         margin_absolut=0,
                         tail_effect=False,
                         repulsion_coeff=1.4,
@@ -134,6 +130,7 @@ class ObstaclePublisher(Node):
                             obs.radius_length,
                         ],
                         center_position=np.array(obs.position),
+                        linear_velocity=np.zeros(3),
                         margin_absolut=0,
                         tail_effect=False,
                         repulsion_coeff=1.4,
@@ -144,8 +141,11 @@ class ObstaclePublisher(Node):
         # print("returned")
         return self.obstacle_environment
 
+    def get_gamma(self, position):
+        return self.obstacle_environment.get_minimum_gamma(position)
+
     def timer_callback(self):
-        print("2. OBSTACLES ")
+        # logging.info("[OBSTACLE_PUBLISHER] Timer callback.")
         sinus_value = math.sin(self.i / 10) / 2
         j = 1
         for ii, obs in enumerate(self.obstacles_array.markers):

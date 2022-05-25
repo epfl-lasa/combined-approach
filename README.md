@@ -1,6 +1,5 @@
 # Semester_Project_Lassa
 
-
 # Setup:
 This runs in the combination with the simulator, for this get:
 (make sure to clone the `develop` branch)
@@ -32,11 +31,11 @@ Run docker with temporary-python container:
 ``` bash
 aica-docker interactive control-libraries-ros-demos:galactic-devel -u ros2 -v ${PWD}/python:/home/ros2/ros2_ws/src/combined_approach/python --net host --no-hostname --ros-domain-id 0
 ```
-[WARNING] Make sure that this is run in the base-folder.
+[IMPORTANT] Make sure that this is run in the base-folder.
 
-Run demo script:
+In the `python` folder, run demo script:
 ``` bash
-ros2 launch combined_approach demo.launch.py demo:=cartesian_twist_control
+python3 robot_arm_avoider.py
 ```
 
 Run file
