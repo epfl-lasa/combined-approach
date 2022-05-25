@@ -138,8 +138,5 @@ class VisualizeVelocityPublisher:
     def publish_velocities(self):
         self.publisher_initial.publish(self.initial_velocity_markers)
         self.publisher_modulated.publish(self.modulated_velocity_markers)
-<<<<<<< HEAD
 
         self.publisher_ee.publish(self.get_initial_velocity_marker())
-=======
->>>>>>> b1a80758e66391c662f120d204aba4e55a4e34c3

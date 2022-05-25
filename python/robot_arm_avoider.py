@@ -4,9 +4,9 @@ from __future__ import print_function
 import os
 import logging
 import copy
+import time
 
 # from threading import Thread
-
 import numpy as np
 from numpy import linalg as LA
 from scipy.spatial.transform import Rotation
@@ -19,6 +19,7 @@ from rcl_interfaces.srv import GetParameters
 # from rclpy.parameter import Parameter
 # import std_msgs
 from std_msgs.msg import Float64MultiArray
+from sensor_msgs.msg import JointState
 
 import pinocchio
 
@@ -51,23 +52,27 @@ class RobotArmAvoider(RobotInterfaceNode):
         target_position=None,
         target_orientation=None,
         visualize_modulation=False,
-        max_linear_velocity=0.25,
+        max_linear_velocity=0.1,
     ):
         logging.info(f"Starting main-avoier with robot={robot_name}.")
         # robot_name = self.get_parameter("robot_name").get_parameter_value().string_value
         publish_topic = "franka/velocity_controller/command"
+        subscription_topic = "franka/joint_states"
+
         super().__init__(node_name, "franka/joint_states", publish_topic)
         self.init_robot_model(robot_name)
 
         # self.initialize_urdf_from_parameterserver_with_pinocchio()
 
         if target_position is None:
-            target_position = [0.5, 0.0, 0.5]
+            target_position = np.array([0.3, 0.0, 0.3])
 
         if target_orientation is None:
-            target_orientation = [0, 0, 0, -1]
-
-        self.max_linear_velocity = max_linear_velocity
+            # target_orientation = np.array([1, 0, 0, 0])
+            # target_orientation = [0, 1, 0, 0]
+            # target_orientation = [0, 0, 0, 1]
+            target_orientation = np.array([0, 1, 0, 0])
+            # target_orientation = np.array([0, 0, 0, 1])
 
         self.franka = franka
         self.obstacles_publisher = obstacles_publisher
@@ -77,6 +82,7 @@ class RobotArmAvoider(RobotInterfaceNode):
         )
         target.set_position(target_position)
         target.set_orientation(target_orientation)
+        print('target', target)
         self._ds = create_cartesian_ds(DYNAMICAL_SYSTEM_TYPE.POINT_ATTRACTOR)
 
         self._ds.set_parameter_value(
@@ -104,6 +110,9 @@ class RobotArmAvoider(RobotInterfaceNode):
         self.link_trunk_array = np.zeros((self.dimension, n_links))
         self.world_control_point_list = [None for ii in range(self.n_links)]
 
+        self.max_linear_velocity = max_linear_velocity
+        self.max_joint_velocity = 0.2 *np.ones(self.n_links)
+
         self.initial_control_velocities = np.zeros(self.n_links)
         self.final_control_velocities = np.zeros(self.n_links)
 
@@ -117,10 +126,13 @@ class RobotArmAvoider(RobotInterfaceNode):
         self.velocity_publisher = self.create_publisher(
             Float64MultiArray, publish_topic, 5
         )
+        
+        # self._joint_state = sr.JointState(
+            # robot_name=robot_name, joint_names=self.robot.get_joint_frames())
+        # self.sub_jointstate = self.create_subscription(
+            # JointState, subscription_topic, self.joint_state_callback, 5)
+        
         self.timer = self.create_timer(timer_period, self.timer_callback)
-
-        # self.joint_state_subscriber()
-
         print("Controller init done")
 
     @property
@@ -132,8 +144,23 @@ class RobotArmAvoider(RobotInterfaceNode):
         # breakpoint()
         pass
 
+    def joint_state_callback(self, msg):
+        # Normally this update should be taken care of by python -> but here we do it!
+        print("UPDATE")
+        self.joint_state.set_positions(msg.position)
+        self.joint_state.set_velocities(msg.velocity)
+        self.joint_state.set_torques(msg.effort)
+
+        self._joint_state.set_positions(msg.position)
+        self._joint_state.set_velocities(msg.velocity)
+        self._joint_state.set_torques(msg.effort)
+
     def timer_callback(self) -> None:
         """The joint-control velocities in an ascending order (starting from the base)"""
+        if not self.state_received:
+            return
+            
+        time_start = time.perf_counter()
 
         self.update_robot_kinematics()
         logging.info("[ROBOT_ARM_AVOIDER] Starting timer_callback.")
@@ -170,10 +197,19 @@ class RobotArmAvoider(RobotInterfaceNode):
             self.update_correction_control(it_joint)
             self.update_modulation_control(it_joint)
 
-        # self.publish_final_control_velocity()
+        self.initial_control_velocities = np.minimum(
+            self.initial_control_velocities, self.max_joint_velocity
+        )
+        
+        # And do the publishing
+        self.publish_final_control_velocity()
 
         if self._visualizer:
             self._visualizer.publish_velocities()
+
+        time_stop = time.perf_counter()
+
+        print(f"Total function time: {time_stop-time_start}s.")
 
     def update_initial_control(self):
         self.ee_twist = self.get_ds_at_endeffector()
@@ -184,6 +220,9 @@ class RobotArmAvoider(RobotInterfaceNode):
         )
 
         self.initial_control_velocities = initial_control.get_velocities()
+        self.initial_control_velocities = np.minimum(
+            self.max_joint_velocity, self.initial_control_velocities
+        )
 
     def get_direction_of_joint_rotation(self, it_joint):
         """Returns the direction of rotation of a joint along the robot.
@@ -214,8 +253,7 @@ class RobotArmAvoider(RobotInterfaceNode):
         mean_vel_cps = np.zeros(self.dimension)
         mean_omega_cps = np.zeros((self.dimension))
 
-        print(f"it join {it_joint}: {self.world_control_point_list[it_joint]}")
-
+        # print(f"it join {it_joint}: {self.world_control_point_list[it_joint]}")
         for ii, control_point in enumerate(self.world_control_point_list[it_joint]):
             if not self.weights_section[it_joint][ii]:  # Zero weight
                 continue
@@ -314,10 +352,9 @@ class RobotArmAvoider(RobotInterfaceNode):
     def get_ds_at_endeffector(self):
         ee_state = self.robot.forward_kinematics(sr.JointPositions(self.joint_state))
         twist = sr.CartesianTwist(self._ds.evaluate(ee_state))
-        twist.clamp(self.max_linear_velocity, 0.25)
+        twist.clamp(self.max_linear_velocity, 0.1)
 
-        print("ee_stat", ee_state)
-        breakpoint()
+        # print("ee_position", ee_state.get_position())
         # velocity = twist.get_linear_velocity()
         # velocity = self._modulator.avoid(ee_state.get_position(), velocity=velocity)
         # twist.set_linear_velocity(velocity)
@@ -450,6 +487,8 @@ class RobotArmAvoider(RobotInterfaceNode):
     def publish_final_control_velocity(self):
         msg = Float64MultiArray()
         msg.data = self.initial_control_velocities.tolist()
+        # msg.data = self.final_control_velocities.tolist()
+        self.initial_control_velocities
         self.velocity_publisher.publish(msg)
 
     def destroy_node(self):
@@ -480,7 +519,7 @@ def main(args=None):
     )
 
     try:
-        attractor_position = np.array([0.5, 0.5, 0.0])
+        attractor_position = np.array([0.4, 0.4, 0.0])
         franka_publisher = FrankaRobotPublisher()
         obstacles_publisher = ObstaclePublisher(obstacles_array)
         robot_arm_avoider = RobotArmAvoider(
