@@ -56,7 +56,7 @@ class RobotArmAvoider(RobotInterfaceNode):
         logging.info(f"Starting main-avoier with robot={robot_name}.")
         # robot_name = self.get_parameter("robot_name").get_parameter_value().string_value
         publish_topic = "franka/velocity_controller/command"
-        super().__init__(node_name, "joint_states", publish_topic)
+        super().__init__(node_name, "franka/joint_states", publish_topic)
         self.init_robot_model(robot_name)
 
         # self.initialize_urdf_from_parameterserver_with_pinocchio()
@@ -119,14 +119,24 @@ class RobotArmAvoider(RobotInterfaceNode):
         )
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
+        # self.joint_state_subscriber()
+
         print("Controller init done")
 
     @property
     def n_links(self) -> int:
         return self.link_trunk_array.shape[1]
 
-    def timer_callback(self):
+    def update_robot_kinematics(self) -> None:
+        print('joint pos', self.joint_state.get_positions())
+        # breakpoint()
+        pass
+        
+        
+    def timer_callback(self) -> None:
         """The joint-control velocities in an ascending order (starting from the base)"""
+
+        self.update_robot_kinematics()
         logging.info("[ROBOT_ARM_AVOIDER] Starting timer_callback.")
         self.update_initial_control()
 
@@ -161,17 +171,14 @@ class RobotArmAvoider(RobotInterfaceNode):
             self.update_correction_control(it_joint)
             self.update_modulation_control(it_joint)
 
-        breakpoint()
-        self.publish_final_control_velocity()
-        # print('publish', self.final_control_velocities)
+        # self.publish_final_control_velocity()
 
         if self._visualizer:
             self._visualizer.publish_velocities()
         
     def update_initial_control(self):
-        self.ee_twist = self.get_modulated_ds_at_endeffector()
+        self.ee_twist = self.get_ds_at_endeffector()
 
-        # breakpoint()
         logging.info("Got the first twist.")
         initial_control = self.robot.inverse_velocity(
             self.ee_twist, sr.JointPositions(self.joint_state)
@@ -235,9 +242,9 @@ class RobotArmAvoider(RobotInterfaceNode):
                     vector=mod_velocity, position=control_point
                 )
 
-                print(f"[it joint | ii] = [{it_joint} | {ii} ]")
-                print("init vel", init_linear_vel)
-                print("modu vel", mod_velocity)
+                # print(f"[it joint | ii] = [{it_joint} | {ii} ]")
+                # print("init vel", init_linear_vel)
+                # print("modu vel", mod_velocity)
 
             mean_vel_cps += self.weights_section[it_joint][ii] * mod_velocity
 
@@ -305,11 +312,13 @@ class RobotArmAvoider(RobotInterfaceNode):
             )
             self.publish(command)
 
-    def get_modulated_ds_at_endeffector(self):
+    def get_ds_at_endeffector(self):
         ee_state = self.robot.forward_kinematics(sr.JointPositions(self.joint_state))
         twist = sr.CartesianTwist(self._ds.evaluate(ee_state))
         twist.clamp(self.max_linear_velocity, 0.25)
 
+        print('ee_stat', ee_state)
+        breakpoint()
         # velocity = twist.get_linear_velocity()
         # velocity = self._modulator.avoid(ee_state.get_position(), velocity=velocity)
         # twist.set_linear_velocity(velocity)
@@ -414,19 +423,6 @@ class RobotArmAvoider(RobotInterfaceNode):
         if weight_sum:
             self.weights_link = self.weights_link / weight_sum
 
-    def publish_final_control_velocity(self):
-        msg = Float64MultiArray()
-        # msg.data = self.final_control_velocities.tolist()
-        msg.data = self.initial_control_velocities.tolist()
-        self.velocity_publisher.publish(msg)
-
-    def stop(self):
-        self.publish(
-            sr.JointVelocities().Zero(
-                self.robot.get_robot_name(), self.robot.get_number_of_joints()
-            )
-        )
-        rclpy.shutdown()
 
     def initialize_urdf_from_parameterserver_with_pinocchio(self):
         # => this is currently not used anymore
@@ -450,7 +446,13 @@ class RobotArmAvoider(RobotInterfaceNode):
 
         self.pinocchio = pinocchio.buildModelFromUrdf(urdf_filename)
 
+    def publish_final_control_velocity(self):
+        msg = Float64MultiArray()
+        msg.data = self.initial_control_velocities.tolist()
+        self.velocity_publisher.publish(msg)
+
     def destroy_node(self):
+        """ Send zero-control command before destroying the node."""
         msg = Float64MultiArray()
         msg.data = [0.0 for _ in range(self.n_links)]
         self.velocity_publisher.publish(msg)

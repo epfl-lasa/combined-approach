@@ -100,7 +100,11 @@ class VisualizeVelocityPublisher:
         qq = np.zeros(4)
         qq[:3] = np.cross(v1, v2)
         qq[3] = np.sqrt((LA.norm(v1) ** 2) * (LA.norm(v2) ** 2)) + np.dot(v1, v2)
-        rotation_vec = qq / LA.norm(qq)
+
+        try:
+            rotation_vec = qq / LA.norm(qq)
+        except ZeroDivisionError:
+            return None
 
         marker_object = Marker()
         marker_object.header.frame_id = "world"
@@ -134,4 +138,7 @@ class VisualizeVelocityPublisher:
     def publish_velocities(self):
         self.publisher_initial.publish(self.initial_velocity_markers)
         self.publisher_modulated.publish(self.modulated_velocity_markers)
+
+        self.publisher_ee.publish(
+            self.get_initial_velocity_marker())
 
