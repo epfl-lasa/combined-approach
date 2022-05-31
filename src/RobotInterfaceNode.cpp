@@ -6,7 +6,7 @@ RobotInterfaceNode::RobotInterfaceNode(
     const std::string& node_name, const std::string& subscription_topic, const std::string& publisher_topic
 ) : Node(node_name, rclcpp::NodeOptions().use_intra_process_comms(false)), subscription_topic_(subscription_topic) {
   this->declare_parameter<std::string>("robot_name", "robot");
-  this->publisher = this->create_publisher<std_msgs::msg::Float64MultiArray>(publisher_topic, 10);
+  this->publisher = this->create_publisher<std_msgs::msg::Float64MultiArray>(publisher_topic, 1);
 }
 
 void RobotInterfaceNode::robot_state_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {

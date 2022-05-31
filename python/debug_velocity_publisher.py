@@ -24,13 +24,14 @@ class VisualizeVelocityPublisher:
         # self.correction_velocity_markers = None
 
         self.publisher_initial = self.avoider.create_publisher(
-            MarkerArray, "initial_velocity", 5
+            MarkerArray, "initial_velocity", 1
         )
         self.publisher_modulated = self.avoider.create_publisher(
-            MarkerArray, "modulated_velocity", 5
+            MarkerArray, "modulated_velocity", 1
         )
 
-        self.publisher_ee = self.avoider.create_publisher(Marker, "intial_velocity", 5)
+        self.publisher_ee = self.avoider.create_publisher(
+            Marker, "intial_velocity", 1)
 
         self._it_initial = None
         self._it_modulation = None

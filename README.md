@@ -41,7 +41,7 @@ aica-docker interactive control-libraries-ros-demos:galactic-devel -u ros2 -v ${
 
 In the `python` folder, run demo script:
 ``` bash
-python3 robot_arm_avoider.py
+python3 robot_arm_avoider.py 
 ```
 
 Run file
