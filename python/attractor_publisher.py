@@ -42,11 +42,6 @@ class AttractorPublisher(Node):
         self.attractor_object.pose.position.y = pos[1]
         self.attractor_object.pose.position.z = pos[2]
 
-        # self.attractor_object.pose.orientation.x = 0.402
-        # self.attractor_object.pose.orientation.y = 0.191
-        # self.attractor_object.pose.orientation.z = 0.462
-        # self.attractor_object.pose.orientation.w = 0.733
-
         self.attractor_object.pose.orientation.x = 0.5
         self.attractor_object.pose.orientation.y = 0.5
         self.attractor_object.pose.orientation.z = 0.5
