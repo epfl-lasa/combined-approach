@@ -26,19 +26,26 @@ class VisualizeVelocityPublisher:
         self.publisher_initial = self.avoider.create_publisher(
             MarkerArray, "initial_velocity", 1
         )
+        self._it_initial = None
+        
         self.publisher_modulated = self.avoider.create_publisher(
             MarkerArray, "modulated_velocity", 1
         )
+        self._it_modulation = None
+        
+        self.publisher_modulated_scaled = self.avoider.create_publisher(
+            MarkerArray, "publisher_modulated_scaled", 1
+        )
 
         self.publisher_ee = self.avoider.create_publisher(
-            Marker, "intial_velocity", 1)
+            Marker, "intial_velocity", 1
+        )
+        self._it_modulation_scaled = None
 
-        self._it_initial = None
-        self._it_modulation = None
-        # self.publisher_correction
-
-        # Initialize Topics
-        # self.timer = self.create_timer(timer_period, self.timer_callback)
+        # self.publisher_rotdir = self.avoider.create_publisher(
+        #     MarkerArray, "rotation_directions", 1
+        # )
+        # self._it_rotdir = None
 
     def reset_initial_array(self):
         self.initial_velocity_markers = MarkerArray()
@@ -47,6 +54,14 @@ class VisualizeVelocityPublisher:
     def reset_modulated_array(self):
         self.modulated_velocity_markers = MarkerArray()
         self._it_modulation = 2000
+
+    def reset_modulated_scaled_array(self):
+        self.scaled_modulated_velocity_markers = MarkerArray()
+        self._it_modulation_scaled = 3000
+
+    def reset_rotdir_array(self):
+        self.rotdir_markers = MarkerArray()
+        self._it_rotdir = 3000
 
     def get_initial_velocity_marker(self):
         marker = self.get_new_arrow(
@@ -65,33 +80,43 @@ class VisualizeVelocityPublisher:
         return marker
 
     def append_modulated_velocity_marker(self, position, vector):
-        marker = self.get_new_arrow(position, vector, scale=0.5)
-
-        marker.color.r = 0.0
-        marker.color.g = 0.1
-        marker.color.b = 1.0
-        marker.color.a = 0.5
-
+        marker = self.get_new_arrow(position, vector, scale=0.5, rgba=[0.0, 0.1, 1.0, 0.5])
         marker.id = self._it_modulation
 
         self._it_modulation += 1
         self.modulated_velocity_markers.markers.append(marker)
 
+    def append_scaled_modulated_velocity_marker(self, position, vector):
+        marker = self.get_new_arrow(
+            position, vector, scale=0.5, rgba=[0.0, 0.8, 1.0, 0.5])
+        marker.id = self._it_modulation_scaled
+
+        self._it_modulation_scaled += 1
+        self.scaled_modulated_velocity_markers.markers.append(marker)
+
     def append_initial_velocity_marker(self, position, vector, scale=0.5):
-        marker = self.get_new_arrow(position, vector)
-
-        marker.color.r = 1.0
-        marker.color.g = 0.1
-        marker.color.b = 0.0
-        marker.color.a = 0.5
-
+        marker = self.get_new_arrow(
+            position, vector, rgba=[1.0, 0.1, 0.0, 0.5])
         marker.id = self._it_initial
 
         self._it_initial += 1
         self.initial_velocity_markers.markers.append(marker)
 
-    def get_new_arrow(self, position, vector, scale=1.0):
-        """Create a new marker-arrow."""
+    def append_rotation_direction_marker(self, position, vector, scale=0.2):
+        marker = self.get_new_arrow(
+            position, vector, scale=scale, rgba=[1.0, 1.0, 1.0, 0.8])
+        marker.id = self._it_rotdir
+
+        self._it_rotdir += 1
+        self.rotdir_markers.markers.append(marker)
+
+    def get_new_arrow(
+        self, position, vector, scale=1.0, rgba=[1.0, 0.0, 0.0, 1.0]
+    ):
+        """Create a new marker-arrow.
+
+        RGB-A color directly as a list argument, since it is never changed, but read-only.
+        """
         magnitude_vec = LA.norm(vector)
         # rotation_align = Rotation.align_vectors([[1, 0, 0]], [vector])
         # rotation_vec = rotation_align[0].as_quat()
@@ -109,7 +134,6 @@ class VisualizeVelocityPublisher:
 
         marker_object = Marker()
         marker_object.header.frame_id = "world"
-
         marker_object.ns = "frank_emika"
 
         # marker_object.id = 1e4 + it
@@ -128,16 +152,26 @@ class VisualizeVelocityPublisher:
         marker_object.scale.x = magnitude_vec * scale
         marker_object.scale.y = magnitude_vec * 0.2 * scale
         marker_object.scale.z = magnitude_vec * 0.2 * scale
-
-        # marker_object.color.r = 1.0
-        # marker_object.color.g = 0.2
-        # marker_object.color.b = 0.0
-        # marker_object.color.a = 1.0
+        
+        marker_object.color.r = rgba[0]
+        marker_object.color.g = rgba[1]
+        marker_object.color.b = rgba[2]
+        marker_object.color.a = rgba[3]
 
         return marker_object
+    
+    def reset_arrays(self):
+        self.reset_initial_array()
+        self.reset_modulated_array()
+        self.reset_modulated_scaled_array()
+        # self.reset_rotdir_array()
 
     def publish_velocities(self):
         self.publisher_initial.publish(self.initial_velocity_markers)
         self.publisher_modulated.publish(self.modulated_velocity_markers)
-
+        self.publisher_modulated_scaled.publish(
+            self.scaled_modulated_velocity_markers
+        )
         self.publisher_ee.publish(self.get_initial_velocity_marker())
+
+        # self.publisher_rotdir.publish(self.rotdir_markers)

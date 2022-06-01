@@ -25,6 +25,8 @@ class AttractorPublisher(Node):
 
         self.attractor_pos = pos
         self.attractor_object.type = Marker.CUBE
+
+        self._attractor_position = pos
         self.attractor_object.pose.position.x = pos[0]
         self.attractor_object.pose.position.y = pos[1]
         self.attractor_object.pose.position.z = pos[2]
@@ -51,8 +53,30 @@ class AttractorPublisher(Node):
         # This has to be, otherwise it will be transparent
         self.attractor_object.color.a = 1.0
 
+    @property
+    def attractor_position(self) -> np.ndarray:
+        return self._attractor_position
+    
+    def switch_double_attractor(self, position):
+        attractor_positions = np.array([
+            [0.4, 0.4, 0.0],
+            [0.4, -0.4, 0.0],
+        ]).T
+
+        if np.linalg.norm(position - attractor_positions[:, 1]) < 2e-1:
+            self._attractor_position = attractor_positions[:, 0]
+        else:
+            self._attractor_position = attractor_positions[:, 1]
+
+        self.attractor_object.pose.position.x = self.attractor_position[0]
+        self.attractor_object.pose.position.y = self.attractor_position[1]
+        self.attractor_object.pose.position.z = self.attractor_position[2]
+        
+    def has_convergend(self, position, conv_margin=3e-2):
+        return np.linalg.norm(self.attractor_position - position) < conv_margin
+
     def timer_callback(self):
-        # print("5. Attractor ")
+        # print("5.  Attractor ")
         self.attractor_publisher.publish(self.attractor_object)
 
 

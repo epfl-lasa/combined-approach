@@ -1,3 +1,9 @@
+"""
+Simple Dynamical System for Generating the Correct Dynamics
+"""
+# Author: Lukas Huber
+# Created: 2022-05-31
+# Github: hubernikus
 from dataclasses import dataclass
 
 from scipy.spatial.transform import Rotation
