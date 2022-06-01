@@ -25,14 +25,14 @@ class WrenchPublisher(Node):
         # self.t = TransformStamped()
 
         # self.frame_id = "world"
-        self.frame_id = "world"
+        self.frame_id = "_frankalink8"
         # self.frame_id = "_frankalink8"
         self.point_object.header.frame_id = self.frame_id
         self.wrench_object.header.frame_id = self.frame_id
 
     def timer_callback(self):
         print("4. WRENCH ")
-        ee_pos = self.franka.get_end_effector_position()
+        ee_pos = self.franka.get_end_effector_position2()
 
         
         self.point_object.point.x = ee_pos[0]
