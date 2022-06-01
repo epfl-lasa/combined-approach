@@ -9,10 +9,22 @@ from rclpy.node import Node
 from rclpy.duration import Duration
 from visualization_msgs.msg import Marker
 
+import tf2_ros
+from tf2_ros import TransformBroadcaster, TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+
+
 
 class AttractorPublisher(Node):
     def __init__(self, pos):
         super().__init__("attractor_node")
+
+        self.declare_parameter("world", "_frankalink8")
+
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
 
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -20,6 +32,7 @@ class AttractorPublisher(Node):
         self.attractor_publisher = self.create_publisher(Marker, "/attractor", 5)
         self.attractor_object = Marker()
         self.frame_id = "world"
+        # self.frame_id = "_frankalink8"
 
         self.attractor_object.header.frame_id = self.frame_id
 
@@ -54,6 +67,56 @@ class AttractorPublisher(Node):
     def timer_callback(self):
         # print("5. Attractor ")
         self.attractor_publisher.publish(self.attractor_object)
+
+    def get_transformation(self, from_frame_rel, to_frame_rel):
+        try:
+            now = rclpy.time.Time()
+            # now = self.get_clock().now().to_msg()
+
+            dur = Duration()
+            dur.sec = 1
+            dur.nsec = 0
+
+            trans = self.tf_buffer.lookup_transform(to_frame_rel, from_frame_rel, now)
+            # print(now)
+            # print(trans.header.frame_id)
+            # breakpoint()
+            return trans
+
+        except TransformException as ex:
+            self.get_logger().info(
+                f"Could not transform {to_frame_rel} to {from_frame_rel}: {ex}"
+            )
+            return None
+
+    def get_attractor_position(self):
+        trans = self.get_transformation("world", "_frankalink8")
+
+        if trans is None:
+            return None
+
+        a_pos = [
+            trans.transform.translation.x,
+            trans.transform.translation.y,
+            trans.transform.translation.z,
+        ]
+
+        return np.array(a_pos)
+
+    def get_attractor_orientation(self):
+        trans = self.get_transformation("world", "_frankalink8")
+
+        if trans is None:
+            return None
+
+        a_ori = [
+            trans.transform.rotation.x,            
+            trans.transform.rotation.y,
+            trans.transform.rotation.z,            
+            trans.transform.rotation.w,
+        ]
+
+        return np.array(a_ori)
 
 
 def main(args=None):

@@ -161,11 +161,34 @@ class FrankaRobotBase(Node):
 
         return np.array(ee_pos)
 
-    def set_end_effector_position(self, position):
-        pass
-        # print(self.msg_jointstate.pose)
-        # self.msg_jointstate.pose
-        # how do I make the whole system change to a specific position based on where I want the end effector to be
+    def get_end_effector_position2(self):
+        ee_trans = self.get_transformation("world", "_frankalink8")
+
+        if ee_trans is None:
+            return None
+
+        ee_pos = [
+            ee_trans.transform.translation.x,
+            ee_trans.transform.translation.y,
+            ee_trans.transform.translation.z,
+        ]
+
+        return np.array(ee_pos)
+
+    def get_end_effector_orientation(self):
+        ee_trans = self.get_transformation("_frankalink8", "world")
+
+        if ee_trans is None:
+            return None
+
+        ee_ori = [
+            ee_trans.transform.rotation.x,            
+            ee_trans.transform.rotation.y,
+            ee_trans.transform.rotation.z,            
+            ee_trans.transform.rotation.w,
+        ]
+
+        return np.array(ee_ori)
 
     def callback_jointstate(self, msg):
         self.msg_jointstate = msg

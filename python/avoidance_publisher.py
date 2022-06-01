@@ -42,7 +42,7 @@ class AvoidancePublisher(Node):
 
     def timer_callback(self):
         print("3. AVOIDANCE")
-        ee_pos = self.franka.get_end_effector_position()
+        # ee_pos = self.franka.get_end_effector_position()
         # print(ee_pos)
 
         # obstacles = self.obstacles_publisher.get_obstacles()
