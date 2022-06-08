@@ -21,7 +21,7 @@ from rcl_interfaces.srv import GetParameters
 from std_msgs.msg import Float64MultiArray
 from sensor_msgs.msg import JointState
 
-import pinocchio
+# import pinocchio
 
 # from pinocchio.robot_wrapper import RobotWrapper
 import state_representation as sr
@@ -43,7 +43,7 @@ from debug_velocity_publisher import VisualizeVelocityPublisher
 
 class RobotArmAvoider(RobotInterfaceNode):
     dimension = 3
-
+    
     def __init__(
         self,
         franka,
@@ -82,8 +82,8 @@ class RobotArmAvoider(RobotInterfaceNode):
         self.obstacles_publisher = obstacles_publisher
 
         n_links = 7
-        self.link_trunk_array = np.zeros((self.dimension, n_links))
-        self.world_control_point_list = [None for ii in range(self.n_links)]
+        self.joint_origins_global = np.zeros((self.dimension, n_links))
+        self.world_control_point_list = [[] for ii in range(self.n_links)]
 
         target = sr.CartesianPose(
             self.robot.get_frames()[-1], self.robot.get_frames()[0]
@@ -158,24 +158,40 @@ class RobotArmAvoider(RobotInterfaceNode):
         self.timer = self.create_timer(timer_period, self.timer_callback)
         print("Controller init done")
 
+        # self.update_local_joint_positions()
+
     @property
     def n_links(self) -> int:
-        return self.link_trunk_array.shape[1]
+        return self.joint_origins_global.shape[1]
+
+    def update_local_joint_positions(self) -> None:
+        """ Extract the joint positions and orientations form urdf file."""
+        from bs4 import BeautifulSoup
+        urdf_data = BeautifulSoup(self.robot_description, "xml")
+
+        self.joint_origins_local = np.zeros((self.dimension, self.n_links))
+        
+        self.joint_axes_local = np.zeros((self.dimension, self.n_links))
+
+        for ii, jointname in enumerate(self.robot.get_joint_frames()):
+            joint_urdf = urdf_data.find('joint', {'name': jointname})
+            
+            origin = joint_urdf.find('origin')
+            position = np.array(origin.get('xyz').split()).astype(float)
+            # position = np.zeros(3)
+            
+            # rotation_rpy = np.array(origin.get('rpy').split()).astype(float)
+            # rot_joint = Rotation.from_euler('XYZ', rotation_rpy)
+            # position = rot_joint.apply(position)
+            
+            self.joint_origins_local[:, ii] = position
+
+            joint_axis = joint_urdf.find('axis').get('xyz')
+            self.joint_axes_local[:, ii] = np.array(joint_axis.split()).astype(float)
 
     def update_robot_kinematics(self) -> None:
         # print("joint pos", self.joint_state.get_positions())
         pass
-
-    def joint_state_callback(self, msg):
-        # Normally this update should be taken care of by python -> but here we do it!
-        print("UPDATE")
-        self.joint_state.set_positions(msg.position)
-        self.joint_state.set_velocities(msg.velocity)
-        self.joint_state.set_torques(msg.effort)
-
-        self._joint_state.set_positions(msg.position)
-        self._joint_state.set_velocities(msg.velocity)
-        self._joint_state.set_torques(msg.effort)
 
     def check_convergence(self):
         ee_state = self.robot.forward_kinematics(sr.JointPositions(self.joint_state))
@@ -187,11 +203,13 @@ class RobotArmAvoider(RobotInterfaceNode):
             
         self._ds_position_only.target_position = self.attractor_publisher.attractor_position
         # self._ds.set_parameter_value(
-        #     "attractor", target, sr.ParameterType.STATE, sr.StateType.CARTESIAN_POSE
+        #     "attractor", target, sr.ParameterType.STATE,
+        #     sr.StateType.CARTESIAN_POSE
         # )
 
     def timer_callback(self) -> None:
         """The joint-control velocities in an ascending order (starting from the base)"""
+        time_start = time.perf_counter()
         logging.info("[ROBOT_ARM_AVOIDER] Starting timer_callback.")
         
         if not self.state_received:
@@ -200,7 +218,6 @@ class RobotArmAvoider(RobotInterfaceNode):
 
         self.check_convergence()
         
-        time_start = time.perf_counter()
         self.update_robot_kinematics()
         self.update_initial_control()
 
@@ -214,7 +231,6 @@ class RobotArmAvoider(RobotInterfaceNode):
         self.update_influence_weights()   #
 
         # print("link weights", repr(np.round(self.weights_link, 1)))
-
         if self._visualizer:
             self._visualizer.reset_arrays()
 
@@ -224,15 +240,28 @@ class RobotArmAvoider(RobotInterfaceNode):
             1 - np.sum(self.weights_link)
         ) * self.initial_control_velocities
 
-        self.update_modulation_control(it_joint=0)
-        logging.info("First link modulation done.")
+        for it_joint in range(0, self.n_links-1):
+            if self.weights_link[it_joint]:
+                self.update_modulation_control(it_joint)
+                # logging.info(f"it={it_joint} : Link modulation done.")
 
-        for it_joint in range(1, self.n_links):
-            if not self.weights_link[it_joint]:
-                continue
-
+            logging.info(f"it={it_joint} : Partially done.")
+            # try:
             self.update_correction_control(it_joint)
-            self.update_modulation_control(it_joint)
+            # except:
+            #     # TODO: remove after debugging
+            #     print("258 | DID NOT WORK (!!!!!)")
+            #     raise
+            #     breakpoint()
+                
+            # logging.info(f"it={it_joint} : Update done")
+
+        logging.info("Entering last.")
+        # Finally: update the last joint
+        if self.weights_link[it_joint=(self.n_links-1)]:
+            self.update_modulation_control(it_joint=(self.n_links-1))
+
+        logging.info("Done all link modulations")
 
         self.initial_control_velocities = np.minimum(
             self.initial_control_velocities, self.max_joint_velocity
@@ -247,6 +276,7 @@ class RobotArmAvoider(RobotInterfaceNode):
         if self._visualizer:
             self._visualizer.publish_velocities()
 
+            # self._visualizer.publish_link_joint_array()
         time_stop = time.perf_counter()
 
         print(f"Total function time: {time_stop-time_start}s.")
@@ -274,7 +304,8 @@ class RobotArmAvoider(RobotInterfaceNode):
 
         joint_name = "_frankajoint" + str(int(it_joint + 1))
         joint_pose = self.robot.forward_kinematics(
-            sr.JointPositions(self.joint_state), joint_name
+            joint_positions=sr.JointPositions(self.joint_state),
+            # frame_name=joint_name
         )
 
         orientation = joint_pose.get_orientation()
@@ -298,56 +329,46 @@ class RobotArmAvoider(RobotInterfaceNode):
         each control point."""
         mean_vel_cps = np.zeros(self.dimension)
         mean_omega_cps = np.zeros((self.dimension))
+        
+        try:
+            for ii, control_point in enumerate(self.world_control_point_list[it_joint]):
+                if not self.weights_section[it_joint][ii]:  # Zero weight
+                    continue
 
-        # print(f"it join {it_joint}: {self.world_control_point_list[it_joint]}")
-        for ii, control_point in enumerate(self.world_control_point_list[it_joint]):
-            if not self.weights_section[it_joint][ii]:  # Zero weight
-                continue
-            
-            # cp_pose = sr.CartesianPose()
-            # cp_pose.set_position(control_point)
-
-            # init_twist = sr.CartesianTwist(self._ds.evaluate(cp_pose))
-            # init_twist.clamp(0.25, 0.25)
-            # init_linear_vel = init_twist.get_linear_velocity()
-
-            init_linear_vel = self._ds_position_only.evaluate(control_point)
-            mod_velocity = self._modulator.avoid(
-                control_point, velocity=init_linear_vel
-            )
-
-            if self._visualizer:
-                # self._visualizer.append_initial_velocity_marker(
-                    # vector=init_linear_vel, position=control_point
-                # )
-
-                self._visualizer.append_modulated_velocity_marker(
-                    vector=mod_velocity, position=control_point
+                init_linear_vel = self._ds_position_only.evaluate(control_point)
+                mod_velocity = self._modulator.avoid(
+                    control_point, velocity=init_linear_vel
                 )
 
-                scaled_mod_velocity = (
-                    mod_velocity
-                    * self.weights_section[it_joint][ii]
-                    * self.weights_link[it_joint]
-                )
-                
-                self._visualizer.append_scaled_modulated_velocity_marker(
-                    vector=scaled_mod_velocity,
-                    position=control_point,
-                )
+                if self._visualizer:
+                    self._visualizer.append_modulated_velocity_marker(
+                        vector=mod_velocity, position=control_point
+                    )
 
-                # print(f"[it joint | ii] = [{it_joint} | {ii} ]")
-                # print("init vel", init_linear_vel)
-                # print("modu vel", mod_velocity)
+                    scaled_mod_velocity = (
+                        mod_velocity
+                        * self.weights_section[it_joint][ii]
+                        * self.weights_link[it_joint]
+                    )
 
+                    self._visualizer.append_scaled_modulated_velocity_marker(
+                        vector=scaled_mod_velocity,
+                        position=control_point,
+                    )
+                    
             mean_vel_cps += self.weights_section[it_joint][ii] * mod_velocity
+            
+        except:
+            breakpoint()
+
+        logging.info("359 | Still a way to go.")
 
         for ii, control_point in enumerate(self.world_control_point_list[it_joint]):
             if not self.weights_section[it_joint][ii]:  # Zero weight
                 continue
 
             mean_omega_cps += self.weights_section[it_joint][ii] * np.cross(
-                self.link_trunk_array[:, it_joint] - control_point,
+                self.joint_origins_global[:, it_joint] - control_point,
                 mod_velocity - mean_vel_cps,
             )
 
@@ -368,36 +389,63 @@ class RobotArmAvoider(RobotInterfaceNode):
             * modulation_control.get_velocities()[it_joint]
         )
 
+        logging.info(f"it={it_joint} : Modulation update done")
+
     def update_correction_control(self, it_joint):
         """Correct the control of the following link."""
-        frame_name = self.robot.get_joint_frames()[it_joint]
+        dir_joint_to_joint = (
+            self.joint_origins_global[:, it_joint+1]
+            - self.joint_origins_global[:, it_joint]
+        )
+
+        if not LA.norm(dir_joint_to_joint):
+            return
+
+        # TODO: is the following 'it_joint' correct?
+        frame_name = self.robot.get_joint_frames()[it_joint+1]
         delta_control_velocity = np.zeros(self.final_control_velocities.shape)
-        delta_control_velocity[:it_joint] = (
-            self.final_control_velocities[:it_joint]
-            - self.initial_control_velocities[:it_joint]
+        delta_control_velocity[:it_joint+1] = (
+            self.final_control_velocities[:it_joint+1]
+            - self.initial_control_velocities[:it_joint+1]
         )
 
         robot_delta_state = copy.deepcopy(self.joint_state)
         robot_delta_state.set_velocities(delta_control_velocity)
-
         twist_delta_control = self.robot.forward_velocity(
             joint_state=robot_delta_state, frame_name=frame_name
         )
-
-        dir_joint = self.get_direction_of_joint_rotation(it_joint=it_joint)
-        delta_omega = np.cross(twist_delta_control.get_linear_velocity(), dir_joint)
-
-        delta_control = np.dot(delta_omega, dir_joint)
-
-        self.final_control_velocities[it_joint] += delta_control * np.sum(
-            self.weights_link[: it_joint - 1]
+        
+        delta_omega = np.cross(
+            dir_joint_to_joint, twist_delta_control.get_linear_velocity()
         )
 
+        dir_joint = self.get_direction_of_joint_rotation(it_joint)
+        delta_control = np.dot(delta_omega, dir_joint)
+
+        self.final_control_velocities[it_joint] += (
+            delta_control * (1 - np.sum(self.weights_link[:it_joint]))
+        )
+
+        logging.info(f"it={it_joint} : Correction update done")
+
+        if self._visualizer:
+            pose_ctrl = self.robot.forward_kinematics(
+                joint_positions=sr.JointPositions(robot_delta_state),
+                frame_name=frame_name
+            )
+            
+            self._visualizer.append_correction_velocity(
+                position=pose_ctrl.get_position(),
+                vector=twist_delta_control.get_linear_velocity(),
+                marker_id=it_joint
+            )
+        
     def control_loop(self):
         if self.state_received and rclpy.ok():
             twist = sr.CartesianTwist(
                 self._ds.evaluate(
-                    self.robot.forward_kinematics(sr.JointPositions(self.joint_state))
+                    self.robot.forward_kinematics(sr.JointPositions(
+                        self.joint_state))
                 )
             )
             twist.clamp(self.max_linear_velocity, self.max_angular_velocity)
@@ -435,10 +483,20 @@ class RobotArmAvoider(RobotInterfaceNode):
         """Get control points in world / link0 frame."""
         # TODO: initialize only once and then update the values
         # self.world_control_point_list = []
+
+        link_start = np.array([0, 0, 0])
+        rot = Rotation.from_quat([0, 0, 0, 1])
+        
         for it_link, link_id in enumerate(self.franka.link_dict.keys()):
             if int(link_id[-1]) == 8:
                 continue
 
+            # The joint is always before the corresponding link
+            # self.joint_origins_global[:, it_link] = (
+            #     link_start + rot.apply(self.joint_origins_local[:, it_link])
+            # )
+            
+            # Get the new transformation
             trafo = self.franka.get_transformation(link_id, "world")
             if trafo is None:
                 self.world_control_point_list.append([])
@@ -456,8 +514,6 @@ class RobotArmAvoider(RobotInterfaceNode):
                 ]
             )
 
-            self.link_trunk_array[:, it_link] = link_start
-
             rot = Rotation.from_quat(
                 [
                     trafo.transform.rotation.x,
@@ -467,6 +523,8 @@ class RobotArmAvoider(RobotInterfaceNode):
                 ]
             )
 
+            self.joint_origins_global[:, it_link] = link_start
+            
             self.world_control_point_list[it_link] = []
             for cp in self.franka.link_dict[link_id].control_point_list:
                 position = rot.apply(cp.position)
@@ -479,6 +537,8 @@ class RobotArmAvoider(RobotInterfaceNode):
             for cp in cp_list:
                 self.gamma_list[-1].append(self.obstacles_publisher.get_gamma(cp))
 
+        # print('gamma', self.gamma_list)
+
     def get_relative_velocity_factors(self) -> np.array:
         """Returns the factor of the relative velocity to the obstacle."""
         # TODO: smarter way to do this; currently it only looks at the robot velocity
@@ -489,11 +549,11 @@ class RobotArmAvoider(RobotInterfaceNode):
         self,
         gamma_min: float = 1,
         gamma_cutoff: float = 1e2,
-        weight_factor: float = 5e-4,
+        weight_factor: float = 1,
     ) -> None:
         self.link_factor = 1
 
-        self.weights_section = []
+        self.weights_section = [[] for _ in range(len(self.gamma_list))]
         self.weights_link = np.zeros(len(self.gamma_list))
 
         velocity_weights = self.get_relative_velocity_factors()
@@ -503,7 +563,6 @@ class RobotArmAvoider(RobotInterfaceNode):
             weights_base = np.zeros(len(g_list))
 
             ind_range = gamma_array < gamma_cutoff
-
             if not np.sum(ind_range):
                 # All are too far away
                 continue
@@ -513,12 +572,21 @@ class RobotArmAvoider(RobotInterfaceNode):
 
             max_weight = np.max(weights_base)
             if not max_weight:  # Zero weight
-                self.weights_section.append(np.zeros(self.section_weights.shape))
+                breakpoint()
+                # TODO (remove): this should never be -> already checked before
+                continue
 
-            weights_base *= (np.arange(weights_base.shape[0]) + 1) / weights_base.shape[
-                0
-            ]
-            self.weights_section.append(weights_base / LA.norm(weights_base))
+            weights_base *= (
+                (np.arange(weights_base.shape[0]) + 1) / weights_base.shape[0]
+            )
+
+            weight_sum = np.sum(weights_base)
+            if weight_sum > 1:
+                weights_sec = weights_base / weight_sum
+            else:
+                weights_sec[-1] = weights_base / weight_sum
+                
+            self.weights_section[it_joint] = weights_sec
 
             self.weights_link[it_joint] = (
                 self.link_factor
@@ -527,9 +595,9 @@ class RobotArmAvoider(RobotInterfaceNode):
                 / self.franka.n_joints
                 * max_weight
             )
-
+            
         weight_sum = np.sum(self.weights_link)
-        if weight_sum:
+        if weight_sum > 1:
             self.weights_link = self.weights_link / weight_sum
 
     def initialize_urdf_from_parameterserver_with_pinocchio(self):
@@ -635,7 +703,8 @@ def main(args=None):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.WARNING)
+    # logging.basicConfig(level=logging.WARNING)
+    logging.basicConfig(level=logging.INFO)
     # logger.setLevel(logging.INFO)
     # get_franka()
     main()

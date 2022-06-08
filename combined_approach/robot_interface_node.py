@@ -1,7 +1,10 @@
 import rclpy
-from rcl_interfaces.srv import GetParameters
 from rclpy.node import Node
-from robot_model import Model, create_urdf_from_string
+from rcl_interfaces.srv import GetParameters
+
+from robot_model import create_urdf_from_string
+from robot_model import Model
+
 from sensor_msgs.msg import JointState as JointStateMsg
 from state_representation import JointState
 from std_msgs.msg import Float64MultiArray
@@ -30,13 +33,15 @@ class RobotInterfaceNode(Node):
                 )
                 rclpy.shutdown()
             self.get_logger().info("Service not available, waiting again...")
+            
         request = GetParameters.Request()
         request.names = ["robot_description"]
         future = client.call_async(request)
         rclpy.spin_until_future_complete(self, future)
-        robot_description = future.result().values[0].string_value
+        self.robot_description = future.result().values[0].string_value
+        
         urdf_path = "/tmp/" + name + ".urdf"
-        create_urdf_from_string(robot_description, urdf_path)
+        create_urdf_from_string(self.robot_description, urdf_path)
         self.robot = Model(name, urdf_path)
         self.joint_state = JointState(
             self.robot.get_robot_name(), self.robot.get_joint_frames()

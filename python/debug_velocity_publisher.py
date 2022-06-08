@@ -47,6 +47,14 @@ class VisualizeVelocityPublisher:
         # )
         # self._it_rotdir = None
 
+        # self.publisher_linkjoint = self.avoider.create_publisher(
+            # MarkerArray, "link_joints", 1
+        # )
+
+        self.publisher_correction_velocity = self.avoider.create_publisher(
+            MarkerArray, "correction_velocity", 1
+        )
+
     def reset_initial_array(self):
         self.initial_velocity_markers = MarkerArray()
         self._it_initial = 1000
@@ -97,7 +105,9 @@ class VisualizeVelocityPublisher:
     def append_initial_velocity_marker(self, position, vector, scale=0.5):
         marker = self.get_new_arrow(
             position, vector, rgba=[1.0, 0.1, 0.0, 0.5])
+        
         marker.id = self._it_initial
+        marker.ns = "initial_velocity"
 
         self._it_initial += 1
         self.initial_velocity_markers.markers.append(marker)
@@ -105,10 +115,23 @@ class VisualizeVelocityPublisher:
     def append_rotation_direction_marker(self, position, vector, scale=0.2):
         marker = self.get_new_arrow(
             position, vector, scale=scale, rgba=[1.0, 1.0, 1.0, 0.8])
+        
         marker.id = self._it_rotdir
+        marker.ns = "rotation_directions"
 
         self._it_rotdir += 1
         self.rotdir_markers.markers.append(marker)
+
+    def append_correction_velocity(self, position, vector, marker_id, scale=1):
+        marker = self.get_new_arrow(
+            position, vector, scale=scale, rgba=[1.0, 0.0, 0.0, 0.8]
+        )
+        
+        marker.id = marker_id
+        marker.ns = "correction_velocity"
+
+        self.correction_velocity_markers.markers.append(marker)
+
 
     def get_new_arrow(
         self, position, vector, scale=1.0, rgba=[1.0, 0.0, 0.0, 1.0]
@@ -134,7 +157,6 @@ class VisualizeVelocityPublisher:
 
         marker_object = Marker()
         marker_object.header.frame_id = "world"
-        marker_object.ns = "frank_emika"
 
         # marker_object.id = 1e4 + it
         marker_object.type = Marker.ARROW
@@ -166,6 +188,45 @@ class VisualizeVelocityPublisher:
         self.reset_modulated_scaled_array()
         # self.reset_rotdir_array()
 
+        self.correction_velocity_markers = MarkerArray()
+
+    def publish_link_joint_array(self):
+        link_joint_array = MarkerArray()
+
+        print(f"{np.round(self.avoider.joint_origins_global, 2)}")
+        for ii in range(self.avoider.joint_origins_global.shape[1]):
+            marker_object = Marker()
+            marker_object.header.frame_id = "world"
+            marker_object.ns = "link_joints"
+            marker_object.id = ii
+
+            marker_object.type = Marker.SPHERE
+
+            marker_object.pose.orientation.x = 0.0
+            marker_object.pose.orientation.y = 0.0
+            marker_object.pose.orientation.z = 0.0
+            marker_object.pose.orientation.w = 1.0
+
+            marker_object.scale.x = 0.05
+            marker_object.scale.y = 0.05
+            marker_object.scale.z = 0.05
+        
+            marker_object.color.r = 0.2
+            marker_object.color.g = 0.2
+            marker_object.color.b = 0.2
+            marker_object.color.a = 1.0
+
+            pos = self.avoider.joint_origins_global[:, ii]
+            
+            print("ii ", ii, "  pos", pos)
+            marker_object.pose.position.x = pos[0]
+            marker_object.pose.position.y = pos[1]
+            marker_object.pose.position.z = pos[2]
+
+            link_joint_array.markers.append(marker_object)
+        
+        self.publisher_linkjoint.publish(link_joint_array)
+
     def publish_velocities(self):
         self.publisher_initial.publish(self.initial_velocity_markers)
         self.publisher_modulated.publish(self.modulated_velocity_markers)
@@ -175,3 +236,7 @@ class VisualizeVelocityPublisher:
         self.publisher_ee.publish(self.get_initial_velocity_marker())
 
         # self.publisher_rotdir.publish(self.rotdir_markers)
+
+        self.publisher_correction_velocity.publish(
+            self.correction_velocity_markers
+        )

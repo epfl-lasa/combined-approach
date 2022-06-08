@@ -9,9 +9,16 @@ RUN sudo apt install -y vim-python-jedi
 RUN sudo apt install -y tmux
 RUN sudo apt install python-is-python3 -y
 
+# Install Pinocchio for Python3.8
+RUN echo 2
+# RUN echo "deb [arch=amd64] http://robotpkg.openrobots.org/packages/debian/pub $(lsb_release -cs) robotpkg" | sudo tee /etc/apt/sources.list.d/robotpkg.list
+# RUN curl http://robotpkg.openrobots.org/packages/debian/robotpkg.key | sudo apt-key add -
+# RUN sudo apt-get update && sudo apt install -qqy robotpkg-py38-pinocchio
+# ENV PYTHONPATH "${PYTHONPATH}:/opt/openrobots/lib/python3.8/site-packages"
+
 # Remove app-list after install
 # this should only be done for final production, since it makes installing / probing difficult
-RUN	sudo rm -rf /var/lib/apt/lists/*
+# RUN	sudo rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p ${HOME}/lib
 WORKDIR ${HOME}/lib
@@ -27,6 +34,9 @@ RUN git clone -b main --single-branch https://github.com/hubernikus/various_tool
 RUN python3.8 -m pip install -r various_tools/requirements.txt
 RUN cd various_tools && sudo python3.8 -m pip install --editable .
 
+# Additional Python-Environment
+RUN pip install beautifulsoup4 lxml
+
 # Files are copied indivually to allow compatibility
 # for combo and without docker container
 # This should be changed for production
@@ -41,11 +51,6 @@ COPY --chown=${USER} ../scripts ./scripts
 COPY --chown=${USER} ../src ./src
 COPY --chown=${USER} ../combined_approach ./combined_approach
 
-# Install Pinocchio for Python3.8 
-RUN echo "deb [arch=amd64] http://robotpkg.openrobots.org/packages/debian/pub $(lsb_release -cs) robotpkg" | sudo tee /etc/apt/sources.list.d/robotpkg.list
-RUN curl http://robotpkg.openrobots.org/packages/debian/robotpkg.key | sudo apt-key add -
-RUN sudo apt-get update && sudo apt install -qqy robotpkg-py38-pinocchio
-ENV PYTHONPATH "${PYTHONPATH}:/opt/openrobots/lib/python3.8/site-packages"
 
 WORKDIR /home/${USER}/ros2_ws/
 RUN /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash; colcon build --symlink-install"

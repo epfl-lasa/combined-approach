@@ -146,6 +146,8 @@ class ObstaclePublisher(Node):
                         # repulsion_coeff=1.4,
                     )
                 )
+                
+            self.obstacle_environment[-1].distance_scaling = 200
 
     def get_obstacles(self):
         # print("returned")
